@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import Layout from '@/components/layout/Layout';
 import { SectionHeader } from '@/components/ui/section-header';
@@ -81,7 +80,7 @@ const Pricing = () => {
   const faq = [
     {
       question: 'How do I get started with your AI services?',
-      answer: 'Getting started is easy. Simply contact us through our contact form or book a consultation call. We'll discuss your needs and recommend the best solution for your business. Once you've selected a plan, our team will begin the implementation process.'
+      answer: 'Getting started is easy. Simply contact us through our contact form or book a consultation call. We will discuss your needs and recommend the best solution for your business. Once you have selected a plan, our team will begin the implementation process.'
     },
     {
       question: 'Can I upgrade or downgrade my plan later?',
@@ -89,7 +88,7 @@ const Pricing = () => {
     },
     {
       question: 'Do you offer custom pricing for specific needs?',
-      answer: 'Absolutely. If our standard plans don't fit your requirements, we can create a custom pricing plan tailored to your specific needs. Contact us to discuss your requirements and get a custom quote.'
+      answer: 'Absolutely. If our standard plans do not fit your requirements, we can create a custom pricing plan tailored to your specific needs. Contact us to discuss your requirements and get a custom quote.'
     },
     {
       question: 'How long does implementation take?',
@@ -102,7 +101,7 @@ const Pricing = () => {
     {
       question: 'What kind of support is included?',
       answer: 'All plans include ongoing support, with varying levels of priority. The Starter plan includes business hours support, the Professional plan offers 24/7 priority support, and the Enterprise plan provides a dedicated support manager.'
-    },
+    }
   ];
 
   return (
