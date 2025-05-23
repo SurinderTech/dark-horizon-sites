@@ -14,6 +14,7 @@ import NotFound from "./pages/NotFound";
 import AIAgents from "./pages/AIAgents";
 import CGITemplates from "./pages/CGITemplates";
 import Dashboard from "./pages/Dashboard";
+import AgentDetail from "./pages/AgentDetail";
 
 const queryClient = new QueryClient();
 
@@ -31,6 +32,7 @@ const App = () => (
           <Route path="/contact" element={<Contact />} />
           <Route path="/admin" element={<Admin />} />
           <Route path="/ai-agents" element={<AIAgents />} />
+          <Route path="/agent/:id" element={<AgentDetail />} />
           <Route path="/cgi-templates" element={<CGITemplates />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="*" element={<NotFound />} />
