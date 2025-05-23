@@ -11,6 +11,9 @@ import Pricing from "./pages/Pricing";
 import Contact from "./pages/Contact";
 import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
+import AIAgents from "./pages/AIAgents";
+import CGITemplates from "./pages/CGITemplates";
+import Dashboard from "./pages/Dashboard";
 
 const queryClient = new QueryClient();
 
@@ -27,6 +30,9 @@ const App = () => (
           <Route path="/pricing" element={<Pricing />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="/admin" element={<Admin />} />
+          <Route path="/ai-agents" element={<AIAgents />} />
+          <Route path="/cgi-templates" element={<CGITemplates />} />
+          <Route path="/dashboard" element={<Dashboard />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

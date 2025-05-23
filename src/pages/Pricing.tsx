@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import Layout from '@/components/layout/Layout';
 import { SectionHeader } from '@/components/ui/section-header';
@@ -101,7 +102,7 @@ const Pricing = () => {
     {
       question: 'What kind of support is included?',
       answer: 'All plans include ongoing support, with varying levels of priority. The Starter plan includes business hours support, the Professional plan offers 24/7 priority support, and the Enterprise plan provides a dedicated support manager.'
-    }
+    },
   ];
 
   return (

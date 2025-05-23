@@ -2,11 +2,12 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Menu, X } from 'lucide-react';
+import { Menu, X, User } from 'lucide-react';
 
 const Navbar = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false); // Mock auth state
   const location = useLocation();
 
   useEffect(() => {
@@ -24,8 +25,9 @@ const Navbar = () => {
 
   const navLinks = [
     { name: 'Home', path: '/' },
+    { name: 'AI Agents', path: '/ai-agents' },
+    { name: 'CGI Templates', path: '/cgi-templates' },
     { name: 'About', path: '/about' },
-    { name: 'Services', path: '/services' },
     { name: 'Pricing', path: '/pricing' },
     { name: 'Contact', path: '/contact' },
   ];
@@ -48,7 +50,7 @@ const Navbar = () => {
             to="/"
             className="text-xl md:text-2xl font-bold text-gradient"
           >
-            AI Services
+            AIStudio
           </Link>
 
           {/* Desktop Navigation */}
@@ -68,12 +70,25 @@ const Navbar = () => {
                 </Link>
               ))}
             </div>
-            <Button
-              asChild
-              className="bg-blue-purple hover:brightness-110 transition-all"
-            >
-              <Link to="/contact">Get Started</Link>
-            </Button>
+            {isAuthenticated ? (
+              <Button
+                asChild
+                variant="outline"
+                className="border-tech-cyan text-tech-cyan hover:bg-tech-cyan/10"
+              >
+                <Link to="/dashboard">
+                  <User className="h-4 w-4 mr-2" />
+                  Dashboard
+                </Link>
+              </Button>
+            ) : (
+              <Button
+                asChild
+                className="bg-blue-purple hover:brightness-110 transition-all"
+              >
+                <Link to="/login">Sign In</Link>
+              </Button>
+            )}
           </div>
 
           {/* Mobile Menu Button */}
@@ -111,14 +126,28 @@ const Navbar = () => {
                   {link.name}
                 </Link>
               ))}
-              <Button
-                asChild
-                className="bg-blue-purple hover:brightness-110 transition-all w-full mt-2"
-              >
-                <Link to="/contact" onClick={() => setIsMobileMenuOpen(false)}>
-                  Get Started
-                </Link>
-              </Button>
+              {isAuthenticated ? (
+                <Button
+                  asChild
+                  variant="outline"
+                  className="border-tech-cyan text-tech-cyan hover:bg-tech-cyan/10 w-full"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  <Link to="/dashboard">
+                    <User className="h-4 w-4 mr-2" />
+                    Dashboard
+                  </Link>
+                </Button>
+              ) : (
+                <Button
+                  asChild
+                  className="bg-blue-purple hover:brightness-110 transition-all w-full mt-2"
+                >
+                  <Link to="/login" onClick={() => setIsMobileMenuOpen(false)}>
+                    Sign In
+                  </Link>
+                </Button>
+              )}
             </div>
           </div>
         )}
