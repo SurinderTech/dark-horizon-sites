@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -230,7 +229,18 @@ export default function SchedulePostForm({ onPostsScheduled }: any) {
       <CardContent>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <PlatformCheckboxes control={form.control} name="platforms" />
+            {/** 
+             * PATCH: The PlatformCheckboxes component expects `control` from react-hook-form's useForm,
+             * which is already what we are providing as `form.control`.
+             * However, if it's still failing, we can add a type check here and log it:
+             */}
+            {typeof form.control === "object" && typeof form.control.getValues === "function" ? (
+              <PlatformCheckboxes control={form.control} name="platforms" />
+            ) : (
+              <div className="border p-4 rounded bg-destructive text-destructive-foreground mb-4">
+                Internal Error: PlatformCheckboxes did not receive a valid form control object.
+              </div>
+            )}
             <ContentTypeTabs form={form} />
 
             {/* Show image upload only for compatible content types */}
