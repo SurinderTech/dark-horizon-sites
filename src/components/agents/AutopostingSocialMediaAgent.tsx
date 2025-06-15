@@ -74,6 +74,22 @@ interface Post {
   attachmentName?: string;
 }
 
+const getTextFromPdf = async (file: File): Promise<string> => {
+    const { getDocument, GlobalWorkerOptions } = await import('pdfjs-dist/build/pdf.mjs');
+    GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@4.4.178/build/pdf.worker.mjs`;
+
+    const uri = URL.createObjectURL(file);
+    const pdf = await getDocument(uri).promise;
+    let content = '';
+    for (let i = 1; i <= pdf.numPages; i++) {
+        const page = await pdf.getPage(i);
+        const textContent = await page.getTextContent();
+        content += textContent.items.map((item: any) => item.str).join(' ');
+    }
+    URL.revokeObjectURL(uri);
+    return content;
+};
+
 const AutopostingSocialMediaAgent = ({ agent }) => {
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(false);
@@ -102,20 +118,20 @@ const AutopostingSocialMediaAgent = ({ agent }) => {
     try {
         if (values.contentType === 'ai') {
             setLoadingMessage('Generating AI content...');
-            const { data, error } = await supabase.functions.invoke('generate-image', {
+            const { data, error } = await supabase.functions.invoke('generate-text-content', {
                 body: { prompt: values.aiPrompt },
             });
 
             if (error) {
                 throw new Error(error.message);
             }
-            imageUrl = data.imageUrl;
-            postContent = values.aiPrompt;
+            postContent = data.generatedText;
+
         } else if (values.contentType === 'pdf') {
             setLoadingMessage('Processing PDF...');
             const file = values.pdfFile[0];
             attachmentName = file.name;
-            postContent = `Content from PDF: ${file.name}. (Full processing coming soon!)`;
+            postContent = await getTextFromPdf(file);
         }
 
         setLoadingMessage('Scheduling...');
@@ -309,9 +325,9 @@ const AutopostingSocialMediaAgent = ({ agent }) => {
                                     render={({ field }) => (
                                     <FormItem>
                                         <FormControl>
-                                            <Textarea placeholder="e.g., An astronaut riding a horse on the moon" {...field} rows={5} />
+                                            <Textarea placeholder="e.g., Write a post about the benefits of remote work" {...field} rows={5} />
                                         </FormControl>
-                                        <FormDescription>Describe the image you want to generate.</FormDescription>
+                                        <FormDescription>Describe the content you want the AI to generate for your post.</FormDescription>
                                         <FormMessage />
                                     </FormItem>
                                     )}
