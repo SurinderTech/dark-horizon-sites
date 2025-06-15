@@ -9,20 +9,24 @@ import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { toast } from 'sonner';
-import { Calendar, Clock, Send, List, Facebook, Twitter, Linkedin, Instagram, Upload, Sparkles, FileText } from 'lucide-react';
+import { Calendar, Clock, Send, List, Facebook, Twitter, Linkedin, Instagram, Upload, Sparkles, FileText, Repeat } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { supabase } from '@/integrations/supabase/client';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { addDays, set } from 'date-fns';
 
 const formSchema = z.object({
   platforms: z.array(z.string()).nonempty({
     message: 'Please select at least one platform.',
   }),
-  date: z.string().min(1, 'Please select a date.'),
   time: z.string().min(1, 'Please select a time.'),
   contentType: z.enum(['manual', 'pdf', 'ai']).default('manual'),
   content: z.string().optional(),
   pdfFile: z.any().optional(),
   aiPrompt: z.string().optional(),
+  scheduleType: z.enum(['specificDate', 'recurring']).default('specificDate'),
+  specificDate: z.string().optional(),
+  recurringDays: z.array(z.string()).optional(),
 }).superRefine((data, ctx) => {
   if (data.contentType === 'manual' && (!data.content || data.content.trim().length === 0)) {
     ctx.addIssue({ code: 'custom', path: ['content'], message: 'Content cannot be empty.' });
@@ -33,6 +37,12 @@ const formSchema = z.object({
   if (data.contentType === 'ai' && (!data.aiPrompt || data.aiPrompt.trim().length === 0)) {
     ctx.addIssue({ code: 'custom', path: ['aiPrompt'], message: 'AI prompt cannot be empty.' });
   }
+  if (data.scheduleType === 'specificDate' && !data.specificDate) {
+    ctx.addIssue({ code: 'custom', path: ['specificDate'], message: 'Please select a date.' });
+  }
+  if (data.scheduleType === 'recurring' && (!data.recurringDays || data.recurringDays.length === 0)) {
+    ctx.addIssue({ code: 'custom', path: ['recurringDays'], message: 'Please select at least one day.' });
+  }
 });
 
 const platformOptions = [
@@ -40,6 +50,16 @@ const platformOptions = [
     { id: 'Twitter', label: 'Twitter', icon: Twitter },
     { id: 'LinkedIn', label: 'LinkedIn', icon: Linkedin },
     { id: 'Instagram', label: 'Instagram', icon: Instagram },
+];
+
+const dayOfWeekOptions = [
+    { id: 'monday', label: 'Monday' },
+    { id: 'tuesday', label: 'Tuesday' },
+    { id: 'wednesday', label: 'Wednesday' },
+    { id: 'thursday', label: 'Thursday' },
+    { id: 'friday', label: 'Friday' },
+    { id: 'saturday', label: 'Saturday' },
+    { id: 'sunday', label: 'Sunday' },
 ];
 
 interface Post {
@@ -64,10 +84,12 @@ const AutopostingSocialMediaAgent = ({ agent }) => {
     defaultValues: {
       platforms: [],
       content: '',
-      date: '',
       time: '',
       contentType: 'manual',
       aiPrompt: '',
+      scheduleType: 'specificDate',
+      specificDate: '',
+      recurringDays: [],
     },
   });
 
@@ -97,22 +119,60 @@ const AutopostingSocialMediaAgent = ({ agent }) => {
         }
 
         setLoadingMessage('Scheduling...');
-        const scheduled_at = new Date(`${values.date}T${values.time}`);
-        const newPosts = values.platforms.map((platform) => ({
-            id: Date.now() + Math.random(),
-            platform,
-            content: postContent || '',
-            date: values.date,
-            time: values.time,
-            status: 'Scheduled',
-            scheduled_at,
-            imageUrl,
-            attachmentName,
-        }));
+        const newPosts: Post[] = [];
+        const [hours, minutes] = values.time.split(':').map(Number);
+
+        if (values.scheduleType === 'specificDate' && values.specificDate) {
+            const scheduled_at = new Date(`${values.specificDate}T${values.time}`);
+            values.platforms.forEach((platform) => {
+                newPosts.push({
+                    id: Date.now() + Math.random(),
+                    platform,
+                    content: postContent || '',
+                    date: values.specificDate!,
+                    time: values.time,
+                    status: 'Scheduled',
+                    scheduled_at,
+                    imageUrl,
+                    attachmentName,
+                });
+            });
+        } else if (values.scheduleType === 'recurring' && values.recurringDays) {
+            const dayMapping: { [key: string]: number } = { sunday: 0, monday: 1, tuesday: 2, wednesday: 3, thursday: 4, friday: 5, saturday: 6 };
+
+            values.recurringDays.forEach(dayName => {
+                const dayIndex = dayMapping[dayName.toLowerCase()];
+                const now = new Date();
+                const targetDateAtTime = set(now, { hours, minutes, seconds: 0, milliseconds: 0 });
+                const currentDayIndex = now.getDay();
+
+                let daysToAdd = dayIndex - currentDayIndex;
+                if (daysToAdd < 0 || (daysToAdd === 0 && targetDateAtTime < now)) {
+                    daysToAdd += 7;
+                }
+                
+                const scheduled_at = addDays(now, daysToAdd);
+                const finalDate = set(scheduled_at, { hours, minutes, seconds: 0, milliseconds: 0 });
+
+                values.platforms.forEach(platform => {
+                    newPosts.push({
+                        id: Date.now() + Math.random(),
+                        platform,
+                        content: postContent || '',
+                        date: finalDate.toISOString().split('T')[0],
+                        time: values.time,
+                        status: 'Scheduled',
+                        scheduled_at: finalDate,
+                        imageUrl,
+                        attachmentName,
+                    });
+                });
+            });
+        }
 
         setTimeout(() => {
-            setPosts((prevPosts) => [...prevPosts, ...newPosts]);
-            toast.success(`Posts scheduled for ${values.platforms.join(', ')} successfully!`);
+            setPosts((prevPosts) => [...prevPosts, ...newPosts].sort((a, b) => a.scheduled_at.getTime() - b.scheduled_at.getTime()));
+            toast.success(`Posts scheduled successfully!`);
             form.reset();
             setLoading(false);
         }, 500);
@@ -261,20 +321,113 @@ const AutopostingSocialMediaAgent = ({ agent }) => {
                       </FormItem>
                     )}
                   />
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-4 rounded-md border p-4">
+                    <FormLabel>Scheduling</FormLabel>
                     <FormField
                       control={form.control}
-                      name="date"
+                      name="scheduleType"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Date</FormLabel>
                           <FormControl>
-                            <Input type="date" {...field} />
+                            <RadioGroup
+                              onValueChange={field.onChange}
+                              defaultValue={field.value}
+                              className="grid grid-cols-1 md:grid-cols-2 gap-4"
+                            >
+                              <FormItem className="flex flex-row items-center space-x-3 space-y-0 rounded-md border p-3 transition-colors hover:bg-accent hover:text-accent-foreground has-[:checked]:bg-accent">
+                                <FormControl>
+                                  <RadioGroupItem value="specificDate" />
+                                </FormControl>
+                                <Calendar className="h-5 w-5 text-muted-foreground" />
+                                <FormLabel className="font-normal cursor-pointer flex-1 w-full">
+                                  Specific Date
+                                </FormLabel>
+                              </FormItem>
+                              <FormItem className="flex flex-row items-center space-x-3 space-y-0 rounded-md border p-3 transition-colors hover:bg-accent hover:text-accent-foreground has-[:checked]:bg-accent">
+                                <FormControl>
+                                  <RadioGroupItem value="recurring" />
+                                </FormControl>
+                                <Repeat className="h-5 w-5 text-muted-foreground" />
+                                <FormLabel className="font-normal cursor-pointer flex-1 w-full">
+                                  Recurring
+                                </FormLabel>
+                              </FormItem>
+                            </RadioGroup>
                           </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
+                    
+                    {form.watch('scheduleType') === 'specificDate' && (
+                       <FormField
+                          control={form.control}
+                          name="specificDate"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Date</FormLabel>
+                              <FormControl>
+                                <Input type="date" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                    )}
+
+                    {form.watch('scheduleType') === 'recurring' && (
+                        <FormField
+                            control={form.control}
+                            name="recurringDays"
+                            render={() => (
+                            <FormItem>
+                                <div className="mb-4">
+                                    <FormLabel>Days of the week</FormLabel>
+                                    <FormDescription>
+                                        Select the days you want to post on.
+                                    </FormDescription>
+                                </div>
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                    {dayOfWeekOptions.map((item) => (
+                                        <FormField
+                                            key={item.id}
+                                            control={form.control}
+                                            name="recurringDays"
+                                            render={({ field }) => {
+                                                return (
+                                                    <FormItem
+                                                        key={item.id}
+                                                        className="flex flex-row items-center space-x-3 space-y-0 rounded-md border p-3 transition-colors hover:bg-accent hover:text-accent-foreground has-[:checked]:bg-accent"
+                                                    >
+                                                        <FormControl>
+                                                            <Checkbox
+                                                                checked={field.value?.includes(item.id)}
+                                                                onCheckedChange={(checked) => {
+                                                                    return checked
+                                                                    ? field.onChange([...(field.value || []), item.id])
+                                                                    : field.onChange(
+                                                                        field.value?.filter(
+                                                                            (value) => value !== item.id
+                                                                        )
+                                                                        );
+                                                                }}
+                                                            />
+                                                        </FormControl>
+                                                        <FormLabel className="font-normal cursor-pointer flex-1 w-full">
+                                                            {item.label}
+                                                        </FormLabel>
+                                                    </FormItem>
+                                                );
+                                            }}
+                                        />
+                                    ))}
+                                </div>
+                                <FormMessage />
+                            </FormItem>
+                            )}
+                        />
+                    )}
+
                     <FormField
                       control={form.control}
                       name="time"
