@@ -30,7 +30,19 @@ export const useAgents = () => {
       }
 
       console.log('Fetched agents:', data);
-      return data as Agent[];
+
+      const transformedData = data.map((agent: Agent) => {
+        if (agent.name === 'Google Sheets Automation Agent') {
+          return {
+            ...agent,
+            name: 'Autoposting social media agent',
+            description: 'Schedule and automate your posts across multiple social media platforms.',
+          };
+        }
+        return agent;
+      });
+
+      return transformedData as Agent[];
     },
   });
 };

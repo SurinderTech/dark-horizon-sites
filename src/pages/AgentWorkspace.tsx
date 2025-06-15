@@ -71,7 +71,6 @@ const AgentWorkspace = () => {
 
   const renderAgentWorkspace = () => {
     switch (agent.name) {
-      case 'Google Sheets Automation Agent':
       case 'Autoposting social media agent':
         return <AutopostingSocialMediaAgent agent={agent} />;
       case 'Auto Food Ordering Agent':
