@@ -16,6 +16,7 @@ import AIAgents from "./pages/AIAgents";
 import CGITemplates from "./pages/CGITemplates";
 import Dashboard from "./pages/Dashboard";
 import AgentDetail from "./pages/AgentDetail";
+import AgentWorkspace from "./pages/AgentWorkspace";
 import Auth from "./pages/Auth";
 
 const queryClient = new QueryClient();
@@ -36,6 +37,7 @@ const App = () => (
             <Route path="/admin" element={<Admin />} />
             <Route path="/ai-agents" element={<AIAgents />} />
             <Route path="/agent/:id" element={<AgentDetail />} />
+            <Route path="/agent/:id/workspace" element={<AgentWorkspace />} />
             <Route path="/cgi-templates" element={<CGITemplates />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/auth" element={<Auth />} />
