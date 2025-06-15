@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import Layout from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
@@ -14,7 +13,7 @@ const AIAgents = () => {
   const [activeCategory, setActiveCategory] = useState('all');
   const { data: agents, isLoading: agentsLoading, error: agentsError } = useAgents();
   const { data: purchases } = useUserPurchases();
-  const { user } = useAuth();
+  const { user, role } = useAuth();
 
   const categories = [
     { id: 'all', label: 'All Agents' },
@@ -104,15 +103,16 @@ const AIAgents = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {filteredAgents.map((agent) => {
               const isPurchased = isAgentPurchased(agent.id);
+              const canUseAgent = isPurchased || role === 'admin';
               
               return (
-                <Card key={agent.id} className={`overflow-hidden ${agent.is_popular ? 'border-tech-cyan' : 'border-border'} ${isPurchased ? 'bg-green-50 border-green-500' : ''}`}>
-                  {agent.is_popular && !isPurchased && (
+                <Card key={agent.id} className={`overflow-hidden ${agent.is_popular ? 'border-tech-cyan' : 'border-border'} ${canUseAgent ? 'bg-green-50 border-green-500' : ''}`}>
+                  {agent.is_popular && !canUseAgent && (
                     <div className="absolute top-0 right-0 bg-tech-cyan text-white px-4 py-1 text-sm font-medium z-10">
                       Popular
                     </div>
                   )}
-                  {isPurchased && (
+                  {canUseAgent && (
                     <div className="absolute top-0 right-0 bg-green-500 text-white px-4 py-1 text-sm font-medium z-10">
                       Owned
                     </div>
@@ -158,9 +158,9 @@ const AIAgents = () => {
                         <span className="font-semibold">${agent.lifetime_price}</span>
                       </div>
                     </div>
-                    {isPurchased ? (
+                    {canUseAgent ? (
                       <Button asChild className="w-full bg-green-500 hover:bg-green-600">
-                        <Link to={`/agent/${agent.id}`}>Use Agent</Link>
+                        <Link to={`/agent/${agent.id}/workspace`}>Use Agent</Link>
                       </Button>
                     ) : (
                       <Button 

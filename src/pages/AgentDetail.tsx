@@ -16,7 +16,7 @@ const AgentDetail = () => {
   const navigate = useNavigate();
   const { data: agents, isLoading } = useAgents();
   const { data: purchases } = useUserPurchases();
-  const { user } = useAuth();
+  const { user, role } = useAuth();
   const [agent, setAgent] = useState<Agent | null>(null);
   const [selectedPricing, setSelectedPricing] = useState<'monthly' | 'yearly' | 'lifetime'>('monthly');
 
@@ -58,6 +58,7 @@ const AgentDetail = () => {
   }
 
   const isPurchased = purchases?.some(purchase => purchase.agent_id === agent.id) || false;
+  const canUseAgent = isPurchased || role === 'admin';
 
   const getCurrentPrice = () => {
     switch (selectedPricing) {
@@ -79,7 +80,7 @@ const AgentDetail = () => {
   };
 
   const handleUseAgent = () => {
-    if (!isPurchased) {
+    if (!canUseAgent) {
       toast.error('Please purchase this agent first');
       return;
     }
@@ -105,7 +106,7 @@ const AgentDetail = () => {
           <div>
             <div className="flex items-center gap-4 mb-4">
               <h1 className="text-3xl md:text-4xl font-bold">{agent.name}</h1>
-              {isPurchased && (
+              {canUseAgent && (
                 <span className="bg-green-500 text-white px-3 py-1 rounded-full text-sm font-medium">
                   Owned
                 </span>
@@ -163,26 +164,26 @@ const AgentDetail = () => {
                   </div>
                 </div>
                 <p className="mt-4 text-muted-foreground">
-                  This demo shows the {agent.name} in action. {isPurchased ? 'You can access the full functionality in your workspace.' : 'Purchase to unlock full functionality.'}
+                  This demo shows the {agent.name} in action. {canUseAgent ? 'You can access the full functionality in your workspace.' : 'Purchase to unlock full functionality.'}
                 </p>
               </TabsContent>
             </Tabs>
           </div>
           
           <div>
-            <Card className={`overflow-hidden ${agent.is_popular ? 'border-tech-cyan' : 'border-border'} ${isPurchased ? 'bg-green-50 border-green-500' : ''}`}>
-              {agent.is_popular && !isPurchased && (
+            <Card className={`overflow-hidden ${agent.is_popular ? 'border-tech-cyan' : 'border-border'} ${canUseAgent ? 'bg-green-50 border-green-500' : ''}`}>
+              {agent.is_popular && !canUseAgent && (
                 <div className="bg-tech-cyan text-white px-4 py-1 text-sm font-medium text-center">
                   Popular Choice
                 </div>
               )}
-              {isPurchased && (
+              {canUseAgent && (
                 <div className="bg-green-500 text-white px-4 py-1 text-sm font-medium text-center">
                   You Own This Agent
                 </div>
               )}
               <div className="p-6">
-                {isPurchased ? (
+                {canUseAgent ? (
                   <div className="space-y-6">
                     <div className="text-center">
                       <h3 className="text-2xl font-bold text-green-600 mb-2">Agent Activated</h3>

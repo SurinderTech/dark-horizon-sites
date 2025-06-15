@@ -1,10 +1,12 @@
 
 import React, { useEffect, useState } from 'react';
-import { useParams, Navigate } from 'react-router-dom';
+import { useParams, Navigate, useNavigate } from 'react-router-dom';
 import Layout from '@/components/layout/Layout';
 import { useAgents } from '@/hooks/useAgents';
+import { useUserPurchases } from '@/hooks/useUserPurchases';
 import { useAuth } from '@/contexts/AuthContext';
 import { Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 
 // Import agent workspace components
 import AutopostingSocialMediaAgent from '@/components/agents/AutopostingSocialMediaAgent';
@@ -16,8 +18,10 @@ import DataAutomationAgent from '@/components/agents/DataAutomationAgent';
 
 const AgentWorkspace = () => {
   const { id } = useParams();
-  const { user } = useAuth();
+  const navigate = useNavigate();
+  const { user, role, loading: authLoading } = useAuth();
   const { data: agents, isLoading: agentsLoading } = useAgents();
+  const { data: purchases, isLoading: purchasesLoading } = useUserPurchases();
   const [agent, setAgent] = useState(null);
 
   useEffect(() => {
@@ -27,11 +31,22 @@ const AgentWorkspace = () => {
     }
   }, [agents, id]);
 
+  const isLoading = agentsLoading || purchasesLoading || authLoading;
+  const isPurchased = purchases?.some(p => p.agent_id === id) || false;
+  const canAccess = role === 'admin' || isPurchased;
+
+  useEffect(() => {
+    if (!isLoading && user && !canAccess) {
+      toast.error("You need to purchase this agent to access its workspace.");
+      navigate(`/agent/${id}`);
+    }
+  }, [isLoading, user, canAccess, id, navigate]);
+
   if (!user) {
     return <Navigate to="/auth" replace />;
   }
 
-  if (agentsLoading) {
+  if (isLoading || (user && !canAccess)) {
     return (
       <Layout>
         <div className="container mx-auto px-4 py-20 flex items-center justify-center">

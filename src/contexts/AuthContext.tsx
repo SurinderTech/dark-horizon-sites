@@ -7,6 +7,7 @@ interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
+  role: string | null;
   signUp: (email: string, password: string, fullName?: string) => Promise<{ error: any }>;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
@@ -26,6 +27,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [role, setRole] = useState<string | null>(null);
+
+  const fetchUserProfile = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', userId)
+        .single();
+  
+      if (error) {
+        console.error('Error fetching user profile:', error.message);
+        // Return default role to prevent access issues if profile is missing
+        return 'user';
+      }
+      return data?.role || 'user';
+    } catch (error) {
+      console.error('An unexpected error occurred fetching profile:', error);
+      return 'user';
+    }
+  };
 
   useEffect(() => {
     // Set up auth state listener
@@ -34,6 +56,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         console.log('Auth state changed:', event, session?.user?.email);
         setSession(session);
         setUser(session?.user ?? null);
+        if (session?.user) {
+          setTimeout(() => {
+            fetchUserProfile(session.user.id).then(setRole);
+          }, 0);
+        } else {
+          setRole(null);
+        }
         setLoading(false);
       }
     );
@@ -42,6 +71,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
+      if (session?.user) {
+        fetchUserProfile(session.user.id).then(setRole);
+      }
       setLoading(false);
     });
 
@@ -74,12 +106,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signOut = async () => {
     await supabase.auth.signOut();
+    setRole(null);
   };
 
   const value = {
     user,
     session,
     loading,
+    role,
     signUp,
     signIn,
     signOut,
