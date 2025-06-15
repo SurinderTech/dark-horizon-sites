@@ -7,7 +7,8 @@ import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { Loader2, UtensilsCrossed, Plane, Hotel, TrainFront, MessagesSquare, CheckCircle, XCircle } from 'lucide-react';
 import { toast } from 'sonner';
-import useBookingByPrompt from './hooks/useBookingByPrompt';
+// FIXED import path to point to the correct location
+import useBookingByPrompt from './TravelFoodAgent/hooks/useBookingByPrompt';
 import FoodOrderTab from './TravelFoodAgent/FoodOrderTab';
 import FlightBookingTab from './TravelFoodAgent/FlightBookingTab';
 import HotelBookingTab from './TravelFoodAgent/HotelBookingTab';
