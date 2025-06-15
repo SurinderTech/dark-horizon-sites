@@ -229,14 +229,8 @@ export default function SchedulePostForm({ onPostsScheduled }: any) {
       <CardContent>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            {/* FIX: Remove invalid getValues check for PlatformCheckboxes */}
-            {form.control ? (
-              <PlatformCheckboxes control={form.control} name="platforms" />
-            ) : (
-              <div className="border p-4 rounded bg-destructive text-destructive-foreground mb-4">
-                Internal Error: PlatformCheckboxes did not receive a valid form control object.
-              </div>
-            )}
+            {/* PlatformCheckboxes now auto-infers control from form context */}
+            <PlatformCheckboxes name="platforms" />
             <ContentTypeTabs form={form} />
 
             {/* Show image upload only for compatible content types */}
