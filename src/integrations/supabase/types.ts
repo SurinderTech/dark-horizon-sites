@@ -9,7 +9,117 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      agents: {
+        Row: {
+          category: string
+          created_at: string
+          description: string
+          features: Json
+          id: string
+          is_popular: boolean | null
+          lifetime_price: number
+          monthly_price: number
+          name: string
+          yearly_price: number
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          description: string
+          features?: Json
+          id?: string
+          is_popular?: boolean | null
+          lifetime_price: number
+          monthly_price: number
+          name: string
+          yearly_price: number
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          description?: string
+          features?: Json
+          id?: string
+          is_popular?: boolean | null
+          lifetime_price?: number
+          monthly_price?: number
+          name?: string
+          yearly_price?: number
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          email: string
+          full_name: string | null
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          full_name?: string | null
+          id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          full_name?: string | null
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      purchases: {
+        Row: {
+          agent_id: string | null
+          amount: number
+          id: string
+          purchase_type: string
+          purchased_at: string
+          status: string
+          stripe_session_id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          agent_id?: string | null
+          amount: number
+          id?: string
+          purchase_type: string
+          purchased_at?: string
+          status?: string
+          stripe_session_id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          agent_id?: string | null
+          amount?: number
+          id?: string
+          purchase_type?: string
+          purchased_at?: string
+          status?: string
+          stripe_session_id?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchases_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchases_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never

@@ -2,12 +2,13 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Menu, X, User } from 'lucide-react';
+import { Menu, X, User, LogOut } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
 
 const Navbar = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isAuthenticated, setIsAuthenticated] = useState(false); // Mock auth state
+  const { user, signOut } = useAuth();
   const location = useLocation();
 
   useEffect(() => {
@@ -34,6 +35,11 @@ const Navbar = () => {
 
   const isActive = (path: string) => {
     return location.pathname === path;
+  };
+
+  const handleSignOut = async () => {
+    await signOut();
+    setIsMobileMenuOpen(false);
   };
 
   return (
@@ -70,23 +76,33 @@ const Navbar = () => {
                 </Link>
               ))}
             </div>
-            {isAuthenticated ? (
-              <Button
-                asChild
-                variant="outline"
-                className="border-tech-cyan text-tech-cyan hover:bg-tech-cyan/10"
-              >
-                <Link to="/dashboard">
-                  <User className="h-4 w-4 mr-2" />
-                  Dashboard
-                </Link>
-              </Button>
+            {user ? (
+              <div className="flex items-center space-x-4">
+                <Button
+                  asChild
+                  variant="outline"
+                  className="border-tech-cyan text-tech-cyan hover:bg-tech-cyan/10"
+                >
+                  <Link to="/dashboard">
+                    <User className="h-4 w-4 mr-2" />
+                    Dashboard
+                  </Link>
+                </Button>
+                <Button
+                  onClick={handleSignOut}
+                  variant="ghost"
+                  className="hover:bg-red-500/10 hover:text-red-500"
+                >
+                  <LogOut className="h-4 w-4 mr-2" />
+                  Sign Out
+                </Button>
+              </div>
             ) : (
               <Button
                 asChild
                 className="bg-blue-purple hover:brightness-110 transition-all"
               >
-                <Link to="/login">Sign In</Link>
+                <Link to="/auth">Sign In</Link>
               </Button>
             )}
           </div>
@@ -126,24 +142,34 @@ const Navbar = () => {
                   {link.name}
                 </Link>
               ))}
-              {isAuthenticated ? (
-                <Button
-                  asChild
-                  variant="outline"
-                  className="border-tech-cyan text-tech-cyan hover:bg-tech-cyan/10 w-full"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                >
-                  <Link to="/dashboard">
-                    <User className="h-4 w-4 mr-2" />
-                    Dashboard
-                  </Link>
-                </Button>
+              {user ? (
+                <div className="flex flex-col space-y-2">
+                  <Button
+                    asChild
+                    variant="outline"
+                    className="border-tech-cyan text-tech-cyan hover:bg-tech-cyan/10 w-full"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    <Link to="/dashboard">
+                      <User className="h-4 w-4 mr-2" />
+                      Dashboard
+                    </Link>
+                  </Button>
+                  <Button
+                    onClick={handleSignOut}
+                    variant="ghost"
+                    className="hover:bg-red-500/10 hover:text-red-500 w-full"
+                  >
+                    <LogOut className="h-4 w-4 mr-2" />
+                    Sign Out
+                  </Button>
+                </div>
               ) : (
                 <Button
                   asChild
                   className="bg-blue-purple hover:brightness-110 transition-all w-full mt-2"
                 >
-                  <Link to="/login" onClick={() => setIsMobileMenuOpen(false)}>
+                  <Link to="/auth" onClick={() => setIsMobileMenuOpen(false)}>
                     Sign In
                   </Link>
                 </Button>
