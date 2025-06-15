@@ -31,15 +31,30 @@ export const useAgents = () => {
 
       console.log('Fetched agents:', data);
 
-      const transformedData = data.map((agent: Agent) => {
-        if (agent.name === 'Google Sheets Automation Agent') {
+      if (!data) {
+        return [];
+      }
+
+      const transformedData = data.map((agent) => {
+        // The `features` property from Supabase is of type Json, but we need string[].
+        // This ensures the features are always a string array.
+        const features: string[] = Array.isArray(agent.features)
+          ? agent.features.map(String)
+          : [];
+
+        const agentWithTypedFeatures = {
+          ...agent,
+          features,
+        };
+
+        if (agentWithTypedFeatures.name === 'Google Sheets Automation Agent') {
           return {
-            ...agent,
+            ...agentWithTypedFeatures,
             name: 'Autoposting social media agent',
             description: 'Schedule and automate your posts across multiple social media platforms.',
           };
         }
-        return agent;
+        return agentWithTypedFeatures;
       });
 
       return transformedData as Agent[];
