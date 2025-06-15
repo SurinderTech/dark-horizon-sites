@@ -273,6 +273,48 @@ export type Database = {
           },
         ]
       }
+      scheduled_posts: {
+        Row: {
+          attachment_name: string | null
+          content: string | null
+          created_at: string
+          error_message: string | null
+          id: number
+          image_url: string | null
+          platform: string
+          response: Json | null
+          scheduled_at: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          attachment_name?: string | null
+          content?: string | null
+          created_at?: string
+          error_message?: string | null
+          id?: number
+          image_url?: string | null
+          platform: string
+          response?: Json | null
+          scheduled_at: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          attachment_name?: string | null
+          content?: string | null
+          created_at?: string
+          error_message?: string | null
+          id?: number
+          image_url?: string | null
+          platform?: string
+          response?: Json | null
+          scheduled_at?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       transport_bookings: {
         Row: {
           created_at: string
