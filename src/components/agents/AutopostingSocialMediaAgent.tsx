@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -10,16 +9,30 @@ import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { toast } from 'sonner';
-import { Calendar, Clock, Send, List, Facebook, Twitter, Linkedin, Instagram } from 'lucide-react';
+import { Calendar, Clock, Send, List, Facebook, Twitter, Linkedin, Instagram, Upload, Sparkles, FileText } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
+import { supabase } from '@/integrations/supabase/client';
 
 const formSchema = z.object({
   platforms: z.array(z.string()).nonempty({
     message: 'Please select at least one platform.',
   }),
-  content: z.string().min(1, 'Content cannot be empty.'),
   date: z.string().min(1, 'Please select a date.'),
   time: z.string().min(1, 'Please select a time.'),
+  contentType: z.enum(['manual', 'pdf', 'ai']).default('manual'),
+  content: z.string().optional(),
+  pdfFile: z.any().optional(),
+  aiPrompt: z.string().optional(),
+}).superRefine((data, ctx) => {
+  if (data.contentType === 'manual' && (!data.content || data.content.trim().length === 0)) {
+    ctx.addIssue({ code: 'custom', path: ['content'], message: 'Content cannot be empty.' });
+  }
+  if (data.contentType === 'pdf' && (!data.pdfFile || data.pdfFile.length === 0)) {
+    ctx.addIssue({ code: 'custom', path: ['pdfFile'], message: 'Please upload a PDF file.' });
+  }
+  if (data.contentType === 'ai' && (!data.aiPrompt || data.aiPrompt.trim().length === 0)) {
+    ctx.addIssue({ code: 'custom', path: ['aiPrompt'], message: 'AI prompt cannot be empty.' });
+  }
 });
 
 const platformOptions = [
@@ -29,9 +42,22 @@ const platformOptions = [
     { id: 'Instagram', label: 'Instagram', icon: Instagram },
 ];
 
+interface Post {
+  id: number;
+  platform: string;
+  content: string;
+  date: string;
+  time: string;
+  status: string;
+  scheduled_at: Date;
+  imageUrl?: string;
+  attachmentName?: string;
+}
+
 const AutopostingSocialMediaAgent = ({ agent }) => {
-  const [posts, setPosts] = useState([]);
+  const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(false);
+  const [loadingMessage, setLoadingMessage] = useState('Scheduling...');
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -40,29 +66,62 @@ const AutopostingSocialMediaAgent = ({ agent }) => {
       content: '',
       date: '',
       time: '',
+      contentType: 'manual',
+      aiPrompt: '',
     },
   });
 
-  const onSubmit = (values: z.infer<typeof formSchema>) => {
+  const onSubmit = async (values: z.infer<typeof formSchema>) => {
     setLoading(true);
-    const scheduled_at = new Date(`${values.date}T${values.time}`);
-    const newPosts = values.platforms.map((platform) => ({
-      id: Date.now() + Math.random(),
-      platform,
-      content: values.content,
-      date: values.date,
-      time: values.time,
-      status: 'Scheduled',
-      scheduled_at,
-    }));
+    let postContent: string | undefined = values.content;
+    let imageUrl: string | undefined = undefined;
+    let attachmentName: string | undefined = undefined;
 
-    // Simulate API call
-    setTimeout(() => {
-      setPosts((prevPosts) => [...prevPosts, ...newPosts]);
-      toast.success(`Posts scheduled for ${values.platforms.join(', ')} successfully!`);
-      form.reset();
-      setLoading(false);
-    }, 1500);
+    try {
+        if (values.contentType === 'ai') {
+            setLoadingMessage('Generating AI content...');
+            const { data, error } = await supabase.functions.invoke('generate-image', {
+                body: { prompt: values.aiPrompt },
+            });
+
+            if (error) {
+                throw new Error(error.message);
+            }
+            imageUrl = data.imageUrl;
+            postContent = values.aiPrompt;
+        } else if (values.contentType === 'pdf') {
+            setLoadingMessage('Processing PDF...');
+            const file = values.pdfFile[0];
+            attachmentName = file.name;
+            postContent = `Content from PDF: ${file.name}. (Full processing coming soon!)`;
+        }
+
+        setLoadingMessage('Scheduling...');
+        const scheduled_at = new Date(`${values.date}T${values.time}`);
+        const newPosts = values.platforms.map((platform) => ({
+            id: Date.now() + Math.random(),
+            platform,
+            content: postContent || '',
+            date: values.date,
+            time: values.time,
+            status: 'Scheduled',
+            scheduled_at,
+            imageUrl,
+            attachmentName,
+        }));
+
+        setTimeout(() => {
+            setPosts((prevPosts) => [...prevPosts, ...newPosts]);
+            toast.success(`Posts scheduled for ${values.platforms.join(', ')} successfully!`);
+            form.reset();
+            setLoading(false);
+        }, 500);
+
+    } catch (error: any) {
+        console.error('Error submitting post:', error);
+        toast.error(`Failed to schedule post: ${error.message}`);
+        setLoading(false);
+    }
   };
 
   return (
@@ -143,14 +202,62 @@ const AutopostingSocialMediaAgent = ({ agent }) => {
                   />
                   <FormField
                     control={form.control}
-                    name="content"
+                    name="contentType"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Content</FormLabel>
-                        <FormControl>
-                          <Textarea placeholder="What's on your mind?" {...field} rows={5} />
-                        </FormControl>
-                        <FormMessage />
+                         <FormLabel>Content</FormLabel>
+                         <Tabs defaultValue={field.value} onValueChange={field.onChange} className="w-full">
+                            <TabsList className="grid w-full grid-cols-3">
+                                <TabsTrigger value="manual"><FileText className="mr-2 h-4 w-4" />Manual</TabsTrigger>
+                                <TabsTrigger value="pdf"><Upload className="mr-2 h-4 w-4" />From PDF</TabsTrigger>
+                                <TabsTrigger value="ai"><Sparkles className="mr-2 h-4 w-4" />Generate with AI</TabsTrigger>
+                            </TabsList>
+                            <TabsContent value="manual" className="pt-4">
+                                <FormField
+                                    control={form.control}
+                                    name="content"
+                                    render={({ field }) => (
+                                    <FormItem>
+                                        <FormControl>
+                                        <Textarea placeholder="What's on your mind?" {...field} rows={5} />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                    )}
+                                />
+                            </TabsContent>
+                            <TabsContent value="pdf" className="pt-4">
+                                <FormField
+                                    control={form.control}
+                                    name="pdfFile"
+                                    render={({ field: { onChange, ...fieldProps }}) => (
+                                        <FormItem>
+                                            <FormLabel>Upload PDF</FormLabel>
+                                            <FormControl>
+                                                <Input type="file" accept=".pdf" {...fieldProps} onChange={(e) => onChange(e.target.files)} />
+                                            </FormControl>
+                                            <FormDescription>Upload a PDF to extract content. Full processing coming soon.</FormDescription>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                            </TabsContent>
+                            <TabsContent value="ai" className="pt-4">
+                                <FormField
+                                    control={form.control}
+                                    name="aiPrompt"
+                                    render={({ field }) => (
+                                    <FormItem>
+                                        <FormControl>
+                                            <Textarea placeholder="e.g., An astronaut riding a horse on the moon" {...field} rows={5} />
+                                        </FormControl>
+                                        <FormDescription>Describe the image you want to generate.</FormDescription>
+                                        <FormMessage />
+                                    </FormItem>
+                                    )}
+                                />
+                            </TabsContent>
+                         </Tabs>
                       </FormItem>
                     )}
                   />
@@ -183,7 +290,7 @@ const AutopostingSocialMediaAgent = ({ agent }) => {
                     />
                   </div>
                   <Button type="submit" disabled={loading} className="w-full">
-                    {loading ? 'Scheduling...' : 'Schedule Post'}
+                    {loading ? loadingMessage : 'Schedule Post'}
                   </Button>
                 </form>
               </Form>
@@ -209,10 +316,21 @@ const AutopostingSocialMediaAgent = ({ agent }) => {
                       </tr>
                     </thead>
                     <tbody>
-                      {posts.sort((a, b) => a.scheduled_at - b.scheduled_at).map((post) => (
+                      {posts.sort((a, b) => a.scheduled_at.getTime() - b.scheduled_at.getTime()).map((post) => (
                         <tr key={post.id}>
                           <td className="border border-border p-2 capitalize">{post.platform}</td>
-                          <td className="border border-border p-2 max-w-xs truncate">{post.content}</td>
+                          <td className="border border-border p-2 max-w-xs">
+                            <div className="flex flex-col gap-2">
+                                {post.imageUrl && <img src={post.imageUrl} alt="Generated content" className="w-24 h-24 object-cover rounded-md" />}
+                                {post.attachmentName && (
+                                    <div className="flex items-center gap-2 text-sm text-muted-foreground p-2 bg-muted rounded-md">
+                                        <FileText className="h-4 w-4" />
+                                        <span className="truncate">{post.attachmentName}</span>
+                                    </div>
+                                )}
+                                <p className="truncate">{post.content}</p>
+                            </div>
+                          </td>
                           <td className="border border-border p-2 whitespace-nowrap">
                             {post.scheduled_at.toLocaleString()}
                           </td>
