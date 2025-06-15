@@ -109,6 +109,29 @@ const AutopostingSocialMediaAgent = ({ agent }) => {
     },
   });
 
+  const sendTwitterPost = async (content: string) => {
+    try {
+      const response = await fetch(
+        "https://qaojozbqboktlhtyvyrd.functions.supabase.co/post-to-x",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            // Optionally pass auth headers if needed (JWT for verify_jwt = true)
+          },
+          body: JSON.stringify({ text: content }),
+        }
+      );
+      const result = await response.json();
+      if (!result.success) {
+        throw new Error(result.error || "Failed to post to Twitter.");
+      }
+      return result;
+    } catch (err: any) {
+      throw new Error(err.message || "Error posting to Twitter.");
+    }
+  };
+
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     setLoading(true);
     let postContent: string | undefined = values.content;
@@ -138,65 +161,81 @@ const AutopostingSocialMediaAgent = ({ agent }) => {
         const newPosts: Post[] = [];
         const [hours, minutes] = values.time.split(':').map(Number);
 
-        if (values.scheduleType === 'specificDate' && values.specificDate) {
-            const scheduled_at = new Date(`${values.specificDate}T${values.time}`);
-            values.platforms.forEach((platform) => {
-                newPosts.push({
-                    id: Date.now() + Math.random(),
-                    platform,
-                    content: postContent || '',
-                    date: values.specificDate!,
-                    time: values.time,
-                    status: 'Scheduled',
-                    scheduled_at,
-                    imageUrl,
-                    attachmentName,
-                });
+        if (
+          values.scheduleType === "specificDate" &&
+          values.specificDate
+        ) {
+          const scheduled_at = new Date(
+            `${values.specificDate}T${values.time}`
+          );
+          for (const platform of values.platforms) {
+            // Twitter integration: Send immediately if job is in the past (for demo), or show toast after scheduling
+            if (platform.toLowerCase() === "twitter") {
+              try {
+                await sendTwitterPost(postContent || "");
+                toast.success("Post sent to Twitter!");
+              } catch (twitterErr: any) {
+                toast.error("Twitter post failed: " + twitterErr.message);
+              }
+            }
+            newPosts.push({
+              id: Date.now() + Math.random(),
+              platform,
+              content: postContent || "",
+              date: values.specificDate!,
+              time: values.time,
+              status: "Scheduled",
+              scheduled_at,
+              imageUrl,
+              attachmentName,
             });
-        } else if (values.scheduleType === 'recurring' && values.recurringDays) {
-            const dayMapping: { [key: string]: number } = { sunday: 0, monday: 1, tuesday: 2, wednesday: 3, thursday: 4, friday: 5, saturday: 6 };
+          }
+        } else if (
+          values.scheduleType === "recurring" &&
+          values.recurringDays
+        ) {
+          // This example does not auto-post recurring jobs to Twitter -- can be implemented with scheduled jobs/cron
+          values.recurringDays.forEach(dayName => {
+            const dayIndex = dayMapping[dayName.toLowerCase()];
+            const now = new Date();
+            const targetDateAtTime = set(now, { hours, minutes, seconds: 0, milliseconds: 0 });
+            const currentDayIndex = now.getDay();
 
-            values.recurringDays.forEach(dayName => {
-                const dayIndex = dayMapping[dayName.toLowerCase()];
-                const now = new Date();
-                const targetDateAtTime = set(now, { hours, minutes, seconds: 0, milliseconds: 0 });
-                const currentDayIndex = now.getDay();
+            let daysToAdd = dayIndex - currentDayIndex;
+            if (daysToAdd < 0 || (daysToAdd === 0 && targetDateAtTime < now)) {
+              daysToAdd += 7;
+            }
+            
+            const scheduled_at = addDays(now, daysToAdd);
+            const finalDate = set(scheduled_at, { hours, minutes, seconds: 0, milliseconds: 0 });
 
-                let daysToAdd = dayIndex - currentDayIndex;
-                if (daysToAdd < 0 || (daysToAdd === 0 && targetDateAtTime < now)) {
-                    daysToAdd += 7;
-                }
-                
-                const scheduled_at = addDays(now, daysToAdd);
-                const finalDate = set(scheduled_at, { hours, minutes, seconds: 0, milliseconds: 0 });
-
-                values.platforms.forEach(platform => {
-                    newPosts.push({
-                        id: Date.now() + Math.random(),
-                        platform,
-                        content: postContent || '',
-                        date: finalDate.toISOString().split('T')[0],
-                        time: values.time,
-                        status: 'Scheduled',
-                        scheduled_at: finalDate,
-                        imageUrl,
-                        attachmentName,
-                    });
-                });
+            values.platforms.forEach(platform => {
+              newPosts.push({
+                id: Date.now() + Math.random(),
+                platform,
+                content: postContent || "",
+                date: finalDate.toISOString().split("T")[0],
+                time: values.time,
+                status: "Scheduled",
+                scheduled_at: finalDate,
+                imageUrl,
+                attachmentName,
+              });
             });
+          });
         }
 
         setTimeout(() => {
-            setPosts((prevPosts) => [...prevPosts, ...newPosts].sort((a, b) => a.scheduled_at.getTime() - b.scheduled_at.getTime()));
-            toast.success(`Posts scheduled successfully!`);
-            form.reset();
-            setLoading(false);
+          setPosts((prevPosts) => [...prevPosts, ...newPosts].sort((a, b) => a.scheduled_at.getTime() - b.scheduled_at.getTime()));
+          toast.success(`Posts scheduled successfully!`);
+          form.reset();
+          setLoading(false);
         }, 500);
 
     } catch (error: any) {
-        console.error('Error submitting post:', error);
-        toast.error(`Failed to schedule post: ${error.message}`);
-        setLoading(false);
+      console.error('Error submitting post:', error);
+      toast.error(`Failed to schedule post: ${error.message}`);
+      setLoading(false);
     }
   };
 
