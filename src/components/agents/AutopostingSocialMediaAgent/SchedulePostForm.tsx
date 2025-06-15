@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -15,6 +16,7 @@ import { addDays, set } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { getTextFromPdf } from "./pdfUtils";
 
+// Extend the schema: add image field (optional)
 const formSchema = z.object({
   platforms: z.array(z.string()).nonempty({ message: 'Please select at least one platform.' }),
   time: z.string().min(1, 'Please select a time.'),
@@ -22,6 +24,7 @@ const formSchema = z.object({
   content: z.string().optional(),
   pdfFile: z.any().optional(),
   aiPrompt: z.string().optional(),
+  image: z.any().optional(),
   scheduleType: z.enum(['specificDate', 'recurring']).default('specificDate'),
   specificDate: z.string().optional(),
   recurringDays: z.array(z.string()).optional(),
@@ -53,6 +56,23 @@ const dayMapping: { [key: string]: number } = {
   saturday: 6,
 };
 
+// Helper: upload image file to Supabase Storage and get its public URL
+async function uploadPostImage(file: File): Promise<{ url: string, name: string }> {
+  const fileExt = file.name.split(".").pop();
+  const newFileName = `${Date.now()}-${Math.random().toString(16).slice(2)}.${fileExt}`;
+  const { data, error } = await supabase.storage.from('post-images').upload(newFileName, file, {
+    cacheControl: "3600",
+    upsert: false,
+    contentType: file.type,
+  });
+  if (error) throw new Error(error.message);
+  // Get public URL
+  const { data: publicData } = supabase.storage.from('post-images').getPublicUrl(newFileName);
+  const url = publicData?.publicUrl;
+  if (!url) throw new Error("Failed to get public image URL.");
+  return { url, name: file.name };
+}
+
 export default function SchedulePostForm({ onPostsScheduled }: any) {
   const [loading, setLoading] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState("Scheduling...");
@@ -68,17 +88,22 @@ export default function SchedulePostForm({ onPostsScheduled }: any) {
       scheduleType: 'specificDate',
       specificDate: '',
       recurringDays: [],
+      image: undefined,
     },
   });
 
   const scheduleTwitterPost = async ({
     content,
     scheduled_at,
-  }: { content: string; scheduled_at: Date }) => {
+    imageUrl,
+    attachmentName,
+  }: { content: string; scheduled_at: Date; imageUrl?: string; attachmentName?: string }) => {
     const { error } = await supabase.from('scheduled_posts' as any).insert({
       platform: "twitter",
       content,
       scheduled_at: scheduled_at.toISOString(),
+      image_url: imageUrl,
+      attachment_name: attachmentName,
     });
     if (error) throw new Error(error.message);
     return true;
@@ -91,6 +116,7 @@ export default function SchedulePostForm({ onPostsScheduled }: any) {
     let attachmentName: string | undefined = undefined;
 
     try {
+      // Handle content based on type
       if (values.contentType === 'ai') {
         setLoadingMessage('Generating AI content...');
         const { data, error } = await supabase.functions.invoke('generate-text-content', {
@@ -105,6 +131,22 @@ export default function SchedulePostForm({ onPostsScheduled }: any) {
         postContent = await getTextFromPdf(file);
       }
 
+      // If image attached (only for manual or ai), upload to storage
+      if (
+        (values.contentType === "manual" || values.contentType === "ai")
+        && values.image && values.image.length > 0
+      ) {
+        setLoadingMessage('Uploading image...');
+        try {
+          const uploadResult = await uploadPostImage(values.image[0]);
+          imageUrl = uploadResult.url;
+          attachmentName = uploadResult.name;
+        } catch (e: any) {
+          toast.error(`Failed to upload image: ${e.message}`);
+          // Optionally decide whether you want to block scheduling on image upload failure
+        }
+      }
+
       setLoadingMessage('Scheduling...');
       const newPosts = [];
       const [hours, minutes] = values.time.split(':').map(Number);
@@ -114,7 +156,7 @@ export default function SchedulePostForm({ onPostsScheduled }: any) {
         for (const platform of values.platforms) {
           if (platform.toLowerCase() === "twitter") {
             try {
-              await scheduleTwitterPost({ content: postContent || "", scheduled_at });
+              await scheduleTwitterPost({ content: postContent || "", scheduled_at, imageUrl, attachmentName });
               toast.success("Twitter post scheduled!");
             } catch (twitterErr: any) {
               toast.error("Failed to schedule Twitter post: " + twitterErr.message);
@@ -147,7 +189,7 @@ export default function SchedulePostForm({ onPostsScheduled }: any) {
 
           values.platforms.forEach(platform => {
             if (platform.toLowerCase() === "twitter") {
-              scheduleTwitterPost({ content: postContent || "", scheduled_at: finalDate })
+              scheduleTwitterPost({ content: postContent || "", scheduled_at: finalDate, imageUrl, attachmentName })
                 .then(() => toast.success("Twitter post scheduled!"))
                 .catch((err) => toast.error("Failed to schedule Twitter post: " + err.message));
             }
@@ -190,6 +232,39 @@ export default function SchedulePostForm({ onPostsScheduled }: any) {
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             <PlatformCheckboxes control={form.control} name="platforms" />
             <ContentTypeTabs form={form} />
+
+            {/* Show image upload only for compatible content types */}
+            {(form.watch("contentType") === "manual" || form.watch("contentType") === "ai") && (
+              <FormField
+                control={form.control}
+                name="image"
+                render={({ field: { onChange, value, ...fieldProps } }) => (
+                  <div>
+                    <FormLabel>Image (optional)</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="file"
+                        accept="image/*"
+                        {...fieldProps}
+                        onChange={(e) => onChange(e.target.files)}
+                      />
+                    </FormControl>
+                    {/* Show preview if file selected */}
+                    {value && value.length > 0 && typeof window !== "undefined" && (
+                      <div className="mt-2">
+                        <img
+                          src={URL.createObjectURL(value[0])}
+                          alt="Preview"
+                          className="max-h-32 rounded"
+                        />
+                      </div>
+                    )}
+                    <FormMessage />
+                  </div>
+                )}
+              />
+            )}
+
             <div className="space-y-4 rounded-md border p-4">
               <SchedulingTypeSelector control={form.control} name="scheduleType" />
 
@@ -236,3 +311,5 @@ export default function SchedulePostForm({ onPostsScheduled }: any) {
     </Card>
   );
 }
+
+// NOTE: This file is over 250 lines and growing. You should consider refactoring it into smaller files for maintainability!
