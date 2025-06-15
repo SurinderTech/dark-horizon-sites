@@ -48,6 +48,156 @@ export type Database = {
         }
         Relationships: []
       }
+      flight_bookings: {
+        Row: {
+          airline: string | null
+          created_at: string
+          departure_date: string
+          destination: string
+          flight_number: string | null
+          id: string
+          origin: string
+          passengers: number
+          prompt: string | null
+          return_date: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          airline?: string | null
+          created_at?: string
+          departure_date: string
+          destination: string
+          flight_number?: string | null
+          id?: string
+          origin: string
+          passengers?: number
+          prompt?: string | null
+          return_date?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          airline?: string | null
+          created_at?: string
+          departure_date?: string
+          destination?: string
+          flight_number?: string | null
+          id?: string
+          origin?: string
+          passengers?: number
+          prompt?: string | null
+          return_date?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "flight_bookings_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      food_orders: {
+        Row: {
+          address: string
+          created_at: string
+          description: string
+          id: string
+          restaurant: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          address: string
+          created_at?: string
+          description: string
+          id?: string
+          restaurant?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          address?: string
+          created_at?: string
+          description?: string
+          id?: string
+          restaurant?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "food_orders_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      hotel_bookings: {
+        Row: {
+          check_in: string
+          check_out: string
+          created_at: string
+          guests: number
+          hotel_name: string | null
+          id: string
+          location: string
+          prompt: string | null
+          room_type: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          check_in: string
+          check_out: string
+          created_at?: string
+          guests?: number
+          hotel_name?: string | null
+          id?: string
+          location: string
+          prompt?: string | null
+          room_type?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          check_in?: string
+          check_out?: string
+          created_at?: string
+          guests?: number
+          hotel_name?: string | null
+          id?: string
+          location?: string
+          prompt?: string | null
+          room_type?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hotel_bookings_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string
@@ -116,6 +266,62 @@ export type Database = {
           },
           {
             foreignKeyName: "purchases_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      transport_bookings: {
+        Row: {
+          created_at: string
+          destination: string
+          id: string
+          mode: string
+          origin: string
+          passengers: number
+          prompt: string | null
+          provider: string | null
+          status: string
+          ticket_number: string | null
+          travel_date: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          destination: string
+          id?: string
+          mode: string
+          origin: string
+          passengers?: number
+          prompt?: string | null
+          provider?: string | null
+          status?: string
+          ticket_number?: string | null
+          travel_date: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          destination?: string
+          id?: string
+          mode?: string
+          origin?: string
+          passengers?: number
+          prompt?: string | null
+          provider?: string | null
+          status?: string
+          ticket_number?: string | null
+          travel_date?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transport_bookings_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"

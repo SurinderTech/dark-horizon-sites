@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useParams, Navigate, useNavigate } from 'react-router-dom';
 import Layout from '@/components/layout/Layout';
@@ -10,7 +9,7 @@ import { toast } from 'sonner';
 
 // Import agent workspace components
 import AutopostingSocialMediaAgent from '@/components/agents/AutopostingSocialMediaAgent';
-import FoodOrderingAgent from '@/components/agents/FoodOrderingAgent';
+import TravelFoodAgent from '@/components/agents/TravelFoodAgent';
 import EmailScraperAgent from '@/components/agents/EmailScraperAgent';
 import JobsProviderAgent from '@/components/agents/JobsProviderAgent';
 import InternshipsProviderAgent from '@/components/agents/InternshipsProviderAgent';
@@ -75,7 +74,7 @@ const AgentWorkspace = () => {
       case 'Autoposting social media agent':
         return <AutopostingSocialMediaAgent agent={agent} />;
       case 'Auto Food Ordering Agent':
-        return <FoodOrderingAgent agent={agent} />;
+        return <TravelFoodAgent agent={agent} />;
       case 'Email Scraper Agent':
         return <EmailScraperAgent agent={agent} />;
       case 'Jobs Provider Agent':
