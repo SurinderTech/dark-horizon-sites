@@ -6,20 +6,28 @@ import { z } from 'zod';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { toast } from 'sonner';
-import { Calendar, Clock, Send, List } from 'lucide-react';
+import { Calendar, Clock, Send, List, Facebook, Twitter, Linkedin, Instagram } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
 
 const formSchema = z.object({
-  platform: z.string({ required_error: 'Please select a platform.' }),
+  platforms: z.array(z.string()).nonempty({
+    message: 'Please select at least one platform.',
+  }),
   content: z.string().min(1, 'Content cannot be empty.'),
   date: z.string().min(1, 'Please select a date.'),
   time: z.string().min(1, 'Please select a time.'),
 });
+
+const platformOptions = [
+    { id: 'Facebook', label: 'Facebook', icon: Facebook },
+    { id: 'Twitter', label: 'Twitter', icon: Twitter },
+    { id: 'LinkedIn', label: 'LinkedIn', icon: Linkedin },
+    { id: 'Instagram', label: 'Instagram', icon: Instagram },
+];
 
 const AutopostingSocialMediaAgent = ({ agent }) => {
   const [posts, setPosts] = useState([]);
@@ -28,7 +36,7 @@ const AutopostingSocialMediaAgent = ({ agent }) => {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      platform: undefined,
+      platforms: [],
       content: '',
       date: '',
       time: '',
@@ -37,17 +45,21 @@ const AutopostingSocialMediaAgent = ({ agent }) => {
 
   const onSubmit = (values: z.infer<typeof formSchema>) => {
     setLoading(true);
-    const newPost = {
-      id: Date.now(),
-      ...values,
+    const scheduled_at = new Date(`${values.date}T${values.time}`);
+    const newPosts = values.platforms.map((platform) => ({
+      id: Date.now() + Math.random(),
+      platform,
+      content: values.content,
+      date: values.date,
+      time: values.time,
       status: 'Scheduled',
-      scheduled_at: new Date(`${values.date}T${values.time}`),
-    };
+      scheduled_at,
+    }));
 
     // Simulate API call
     setTimeout(() => {
-      setPosts((prevPosts) => [...prevPosts, newPost]);
-      toast.success('Post scheduled successfully!');
+      setPosts((prevPosts) => [...prevPosts, ...newPosts]);
+      toast.success(`Posts scheduled for ${values.platforms.join(', ')} successfully!`);
       form.reset();
       setLoading(false);
     }, 1500);
@@ -77,23 +89,54 @@ const AutopostingSocialMediaAgent = ({ agent }) => {
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                   <FormField
                     control={form.control}
-                    name="platform"
-                    render={({ field }) => (
+                    name="platforms"
+                    render={() => (
                       <FormItem>
-                        <FormLabel>Platform</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select a social media platform" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="Facebook">Facebook</SelectItem>
-                            <SelectItem value="Twitter">Twitter</SelectItem>
-                            <SelectItem value="LinkedIn">LinkedIn</SelectItem>
-                            <SelectItem value="Instagram">Instagram</SelectItem>
-                          </SelectContent>
-                        </Select>
+                        <div className="mb-4">
+                            <FormLabel>Platforms</FormLabel>
+                            <FormDescription>
+                                Select the platforms you want to post to.
+                            </FormDescription>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {platformOptions.map((item) => {
+                                const Icon = item.icon;
+                                return (
+                                    <FormField
+                                        key={item.id}
+                                        control={form.control}
+                                        name="platforms"
+                                        render={({ field }) => {
+                                            return (
+                                                <FormItem
+                                                    key={item.id}
+                                                    className="flex flex-row items-center space-x-3 space-y-0 rounded-md border p-3 transition-colors hover:bg-accent hover:text-accent-foreground has-[:checked]:bg-accent"
+                                                >
+                                                    <FormControl>
+                                                        <Checkbox
+                                                            checked={field.value?.includes(item.id)}
+                                                            onCheckedChange={(checked) => {
+                                                                return checked
+                                                                ? field.onChange([...(field.value || []), item.id])
+                                                                : field.onChange(
+                                                                    field.value?.filter(
+                                                                        (value) => value !== item.id
+                                                                    )
+                                                                    );
+                                                            }}
+                                                        />
+                                                    </FormControl>
+                                                    <Icon className="h-5 w-5 text-muted-foreground" />
+                                                    <FormLabel className="font-normal cursor-pointer flex-1 w-full">
+                                                        {item.label}
+                                                    </FormLabel>
+                                                </FormItem>
+                                            );
+                                        }}
+                                    />
+                                )
+                            })}
+                        </div>
                         <FormMessage />
                       </FormItem>
                     )}
