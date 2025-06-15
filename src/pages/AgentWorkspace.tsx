@@ -1,11 +1,10 @@
+
 import React, { useEffect, useState } from 'react';
 import { useParams, Navigate } from 'react-router-dom';
 import Layout from '@/components/layout/Layout';
 import { useAgents } from '@/hooks/useAgents';
-import { useUserPurchases } from '@/hooks/useUserPurchases';
 import { useAuth } from '@/contexts/AuthContext';
 import { Loader2 } from 'lucide-react';
-import { toast } from 'sonner';
 
 // Import agent workspace components
 import AutopostingSocialMediaAgent from '@/components/agents/AutopostingSocialMediaAgent';
@@ -19,29 +18,20 @@ const AgentWorkspace = () => {
   const { id } = useParams();
   const { user } = useAuth();
   const { data: agents, isLoading: agentsLoading } = useAgents();
-  const { data: purchases, isLoading: purchasesLoading } = useUserPurchases();
   const [agent, setAgent] = useState(null);
-  const [isPurchased, setIsPurchased] = useState(false);
 
   useEffect(() => {
-    if (agents && purchases && id) {
+    if (agents && id) {
       const foundAgent = agents.find(a => a.id === id);
-      const purchased = purchases.some(purchase => purchase.agent_id === id);
-      
       setAgent(foundAgent);
-      setIsPurchased(purchased);
-      
-      if (foundAgent && !purchased) {
-        toast.error('You need to purchase this agent first');
-      }
     }
-  }, [agents, purchases, id]);
+  }, [agents, id]);
 
   if (!user) {
     return <Navigate to="/auth" replace />;
   }
 
-  if (agentsLoading || purchasesLoading) {
+  if (agentsLoading) {
     return (
       <Layout>
         <div className="container mx-auto px-4 py-20 flex items-center justify-center">
@@ -63,10 +53,6 @@ const AgentWorkspace = () => {
         </div>
       </Layout>
     );
-  }
-
-  if (!isPurchased) {
-    return <Navigate to={`/agent/${id}`} replace />;
   }
 
   const renderAgentWorkspace = () => {
