@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useParams, Navigate } from 'react-router-dom';
 import Layout from '@/components/layout/Layout';
@@ -9,7 +8,7 @@ import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 // Import agent workspace components
-import GoogleSheetsAgent from '@/components/agents/GoogleSheetsAgent';
+import AutopostingSocialMediaAgent from '@/components/agents/AutopostingSocialMediaAgent';
 import FoodOrderingAgent from '@/components/agents/FoodOrderingAgent';
 import EmailScraperAgent from '@/components/agents/EmailScraperAgent';
 import JobsProviderAgent from '@/components/agents/JobsProviderAgent';
@@ -73,7 +72,8 @@ const AgentWorkspace = () => {
   const renderAgentWorkspace = () => {
     switch (agent.name) {
       case 'Google Sheets Automation Agent':
-        return <GoogleSheetsAgent agent={agent} />;
+      case 'Autoposting social media agent':
+        return <AutopostingSocialMediaAgent agent={agent} />;
       case 'Auto Food Ordering Agent':
         return <FoodOrderingAgent agent={agent} />;
       case 'Email Scraper Agent':
