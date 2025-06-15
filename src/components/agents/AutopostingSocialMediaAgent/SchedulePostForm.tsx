@@ -229,12 +229,8 @@ export default function SchedulePostForm({ onPostsScheduled }: any) {
       <CardContent>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            {/** 
-             * PATCH: The PlatformCheckboxes component expects `control` from react-hook-form's useForm,
-             * which is already what we are providing as `form.control`.
-             * However, if it's still failing, we can add a type check here and log it:
-             */}
-            {typeof form.control === "object" && typeof form.control.getValues === "function" ? (
+            {/* FIX: Remove invalid getValues check for PlatformCheckboxes */}
+            {form.control ? (
               <PlatformCheckboxes control={form.control} name="platforms" />
             ) : (
               <div className="border p-4 rounded bg-destructive text-destructive-foreground mb-4">
