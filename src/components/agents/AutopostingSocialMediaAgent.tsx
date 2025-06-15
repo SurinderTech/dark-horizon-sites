@@ -63,6 +63,16 @@ const dayOfWeekOptions = [
     { id: 'sunday', label: 'Sunday' },
 ];
 
+const dayMapping: { [key: string]: number } = {
+  sunday: 0,
+  monday: 1,
+  tuesday: 2,
+  wednesday: 3,
+  thursday: 4,
+  friday: 5,
+  saturday: 6,
+};
+
 interface Post {
   id: number;
   platform: string;
