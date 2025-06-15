@@ -3,3 +3,6 @@ project_id = "qaojozbqboktlhtyvyrd"
 
 [functions.post-to-x]
 verify_jwt = true
+
+[functions.scheduled-twitter-poster]
+verify_jwt = false

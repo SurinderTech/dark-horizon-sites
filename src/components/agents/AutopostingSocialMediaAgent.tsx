@@ -119,27 +119,17 @@ const AutopostingSocialMediaAgent = ({ agent }) => {
     },
   });
 
-  const sendTwitterPost = async (content: string) => {
-    try {
-      const response = await fetch(
-        "https://qaojozbqboktlhtyvyrd.functions.supabase.co/post-to-x",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            // Optionally pass auth headers if needed (JWT for verify_jwt = true)
-          },
-          body: JSON.stringify({ text: content }),
-        }
-      );
-      const result = await response.json();
-      if (!result.success) {
-        throw new Error(result.error || "Failed to post to Twitter.");
-      }
-      return result;
-    } catch (err: any) {
-      throw new Error(err.message || "Error posting to Twitter.");
-    }
+  const scheduleTwitterPost = async ({
+    content,
+    scheduled_at,
+  }: { content: string; scheduled_at: Date }) => {
+    const { error } = await supabase.from('scheduled_posts').insert({
+      platform: 'twitter',
+      content,
+      scheduled_at: scheduled_at.toISOString(),
+    });
+    if (error) throw new Error(error.message);
+    return true;
   };
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
@@ -149,98 +139,89 @@ const AutopostingSocialMediaAgent = ({ agent }) => {
     let attachmentName: string | undefined = undefined;
 
     try {
-        if (values.contentType === 'ai') {
-            setLoadingMessage('Generating AI content...');
-            const { data, error } = await supabase.functions.invoke('generate-text-content', {
-                body: { prompt: values.aiPrompt },
-            });
-
-            if (error) {
-                throw new Error(error.message);
-            }
-            postContent = data.generatedText;
-
-        } else if (values.contentType === 'pdf') {
-            setLoadingMessage('Processing PDF...');
-            const file = values.pdfFile[0];
-            attachmentName = file.name;
-            postContent = await getTextFromPdf(file);
+      if (values.contentType === 'ai') {
+        setLoadingMessage('Generating AI content...');
+        const { data, error } = await supabase.functions.invoke('generate-text-content', {
+          body: { prompt: values.aiPrompt },
+        });
+        if (error) {
+          throw new Error(error.message);
         }
+        postContent = data.generatedText;
+      } else if (values.contentType === 'pdf') {
+        setLoadingMessage('Processing PDF...');
+        const file = values.pdfFile[0];
+        attachmentName = file.name;
+        postContent = await getTextFromPdf(file);
+      }
 
-        setLoadingMessage('Scheduling...');
-        const newPosts: Post[] = [];
-        const [hours, minutes] = values.time.split(':').map(Number);
+      setLoadingMessage('Scheduling...');
+      const newPosts: Post[] = [];
+      const [hours, minutes] = values.time.split(':').map(Number);
 
-        if (
-          values.scheduleType === "specificDate" &&
-          values.specificDate
-        ) {
-          const scheduled_at = new Date(
-            `${values.specificDate}T${values.time}`
-          );
-          for (const platform of values.platforms) {
-            // Twitter integration: Send immediately if job is in the past (for demo), or show toast after scheduling
+      if (values.scheduleType === "specificDate" && values.specificDate) {
+        const scheduled_at = new Date(`${values.specificDate}T${values.time}`);
+        for (const platform of values.platforms) {
+          if (platform.toLowerCase() === "twitter") {
+            try {
+              await scheduleTwitterPost({ content: postContent || "", scheduled_at });
+              toast.success("Twitter post scheduled!");
+            } catch (twitterErr: any) {
+              toast.error("Failed to schedule Twitter post: " + twitterErr.message);
+            }
+          }
+          newPosts.push({
+            id: Date.now() + Math.random(),
+            platform,
+            content: postContent || "",
+            date: values.specificDate!,
+            time: values.time,
+            status: "Scheduled",
+            scheduled_at,
+            imageUrl,
+            attachmentName,
+          });
+        }
+      } else if (values.scheduleType === "recurring" && values.recurringDays) {
+        values.recurringDays.forEach(dayName => {
+          const dayIndex = dayMapping[dayName.toLowerCase()];
+          const now = new Date();
+          const targetDateAtTime = set(now, { hours, minutes, seconds: 0, milliseconds: 0 });
+          const currentDayIndex = now.getDay();
+          let daysToAdd = dayIndex - currentDayIndex;
+          if (daysToAdd < 0 || (daysToAdd === 0 && targetDateAtTime < now)) {
+            daysToAdd += 7;
+          }
+          const scheduled_at = addDays(now, daysToAdd);
+          const finalDate = set(scheduled_at, { hours, minutes, seconds: 0, milliseconds: 0 });
+
+          values.platforms.forEach(platform => {
             if (platform.toLowerCase() === "twitter") {
-              try {
-                await sendTwitterPost(postContent || "");
-                toast.success("Post sent to Twitter!");
-              } catch (twitterErr: any) {
-                toast.error("Twitter post failed: " + twitterErr.message);
-              }
+              scheduleTwitterPost({ content: postContent || "", scheduled_at: finalDate })
+                .then(() => toast.success("Twitter post scheduled!"))
+                .catch((err) => toast.error("Failed to schedule Twitter post: " + err.message));
             }
             newPosts.push({
               id: Date.now() + Math.random(),
               platform,
               content: postContent || "",
-              date: values.specificDate!,
+              date: finalDate.toISOString().split("T")[0],
               time: values.time,
               status: "Scheduled",
-              scheduled_at,
+              scheduled_at: finalDate,
               imageUrl,
               attachmentName,
             });
-          }
-        } else if (
-          values.scheduleType === "recurring" &&
-          values.recurringDays
-        ) {
-          // This example does not auto-post recurring jobs to Twitter -- can be implemented with scheduled jobs/cron
-          values.recurringDays.forEach(dayName => {
-            const dayIndex = dayMapping[dayName.toLowerCase()];
-            const now = new Date();
-            const targetDateAtTime = set(now, { hours, minutes, seconds: 0, milliseconds: 0 });
-            const currentDayIndex = now.getDay();
-
-            let daysToAdd = dayIndex - currentDayIndex;
-            if (daysToAdd < 0 || (daysToAdd === 0 && targetDateAtTime < now)) {
-              daysToAdd += 7;
-            }
-            
-            const scheduled_at = addDays(now, daysToAdd);
-            const finalDate = set(scheduled_at, { hours, minutes, seconds: 0, milliseconds: 0 });
-
-            values.platforms.forEach(platform => {
-              newPosts.push({
-                id: Date.now() + Math.random(),
-                platform,
-                content: postContent || "",
-                date: finalDate.toISOString().split("T")[0],
-                time: values.time,
-                status: "Scheduled",
-                scheduled_at: finalDate,
-                imageUrl,
-                attachmentName,
-              });
-            });
           });
-        }
+        });
+      }
 
-        setTimeout(() => {
-          setPosts((prevPosts) => [...prevPosts, ...newPosts].sort((a, b) => a.scheduled_at.getTime() - b.scheduled_at.getTime()));
-          toast.success(`Posts scheduled successfully!`);
-          form.reset();
-          setLoading(false);
-        }, 500);
+      setTimeout(() => {
+        setPosts((prevPosts) => [...prevPosts, ...newPosts].sort((a, b) => a.scheduled_at.getTime() - b.scheduled_at.getTime()));
+        toast.success(`Posts scheduled successfully!`);
+        form.reset();
+        setLoading(false);
+      }, 500);
 
     } catch (error: any) {
       console.error('Error submitting post:', error);
