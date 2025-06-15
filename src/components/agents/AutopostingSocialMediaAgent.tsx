@@ -14,6 +14,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { supabase } from '@/integrations/supabase/client';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { addDays, set } from 'date-fns';
+import * as pdfjsLib from 'pdfjs-dist';
 
 const formSchema = z.object({
   platforms: z.array(z.string()).nonempty({
@@ -74,12 +75,11 @@ interface Post {
   attachmentName?: string;
 }
 
-const getTextFromPdf = async (file: File): Promise<string> => {
-    const { getDocument, GlobalWorkerOptions } = await import('pdfjs-dist/build/pdf.mjs');
-    GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@4.4.178/build/pdf.worker.mjs`;
+pdfjsLib.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@4.4.178/build/pdf.worker.mjs`;
 
+const getTextFromPdf = async (file: File): Promise<string> => {
     const uri = URL.createObjectURL(file);
-    const pdf = await getDocument(uri).promise;
+    const pdf = await pdfjsLib.getDocument(uri).promise;
     let content = '';
     for (let i = 1; i <= pdf.numPages; i++) {
         const page = await pdf.getPage(i);
