@@ -23,12 +23,17 @@ const corsHeaders = {
 };
 
 function validateEnvVars() {
-  if (!API_KEY) throw new Error("Missing TWITTER_CONSUMER_KEY");
-  if (!API_SECRET) throw new Error("Missing TWITTER_CONSUMER_SECRET");
-  if (!ACCESS_TOKEN) throw new Error("Missing TWITTER_ACCESS_TOKEN");
-  if (!ACCESS_TOKEN_SECRET) throw new Error("Missing TWITTER_ACCESS_TOKEN_SECRET");
-  if (!SUPABASE_URL) throw new Error("Missing SUPABASE_URL");
-  if (!SUPABASE_SERVICE_ROLE_KEY) throw new Error("Missing SUPABASE_SERVICE_ROLE_KEY");
+  const missing = [];
+  if (!API_KEY) missing.push("TWITTER_CONSUMER_KEY");
+  if (!API_SECRET) missing.push("TWITTER_CONSUMER_SECRET");
+  if (!ACCESS_TOKEN) missing.push("TWITTER_ACCESS_TOKEN");
+  if (!ACCESS_TOKEN_SECRET) missing.push("TWITTER_ACCESS_TOKEN_SECRET");
+  if (!SUPABASE_URL) missing.push("SUPABASE_URL");
+  if (!SUPABASE_SERVICE_ROLE_KEY) missing.push("SUPABASE_SERVICE_ROLE_KEY");
+  
+  if (missing.length > 0) {
+    throw new Error(`Missing environment variables: ${missing.join(", ")}`);
+  }
 }
 
 // Generate OAuth signature (as per Twitter API 2.0 instructions)
@@ -76,7 +81,11 @@ const BASE_URL = "https://api.x.com/2";
 
 // --- Function to fetch pending posts due for sending ---
 async function fetchPendingPosts() {
-  const url = `${SUPABASE_URL}/rest/v1/scheduled_posts?platform=eq.twitter&status=eq.pending&scheduled_at=lte.${new Date().toISOString()}&order=scheduled_at.asc`;
+  const currentTime = new Date().toISOString();
+  const url = `${SUPABASE_URL}/rest/v1/scheduled_posts?platform=eq.twitter&status=eq.pending&scheduled_at=lte.${currentTime}&order=scheduled_at.asc`;
+  
+  console.log("Fetching pending posts from:", url);
+  
   const res = await fetch(url, {
     method: "GET",
     headers: {
@@ -86,14 +95,22 @@ async function fetchPendingPosts() {
       Prefer: "return=representation"
     },
   });
-  if (!res.ok) throw new Error(`Failed to fetch scheduled posts: ${res.status}`);
-  return await res.json();
+  
+  if (!res.ok) {
+    const errorText = await res.text();
+    console.error("Failed to fetch posts:", res.status, errorText);
+    throw new Error(`Failed to fetch scheduled posts: ${res.status} - ${errorText}`);
+  }
+  
+  const posts = await res.json();
+  console.log("Found pending posts:", posts.length);
+  return posts;
 }
 
 // --- Function to update a post's status/response/error ---
 async function markPostSent(id: number, response: any) {
   const url = `${SUPABASE_URL}/rest/v1/scheduled_posts?id=eq.${id}`;
-  await fetch(url, {
+  const res = await fetch(url, {
     method: "PATCH",
     headers: {
       apikey: SUPABASE_SERVICE_ROLE_KEY!,
@@ -107,10 +124,15 @@ async function markPostSent(id: number, response: any) {
       updated_at: new Date().toISOString(),
     }),
   });
+  
+  if (!res.ok) {
+    console.error("Failed to mark post as sent:", await res.text());
+  }
 }
+
 async function markPostFailed(id: number, errorMsg: string) {
   const url = `${SUPABASE_URL}/rest/v1/scheduled_posts?id=eq.${id}`;
-  await fetch(url, {
+  const res = await fetch(url, {
     method: "PATCH",
     headers: {
       apikey: SUPABASE_SERVICE_ROLE_KEY!,
@@ -124,6 +146,10 @@ async function markPostFailed(id: number, errorMsg: string) {
       updated_at: new Date().toISOString(),
     }),
   });
+  
+  if (!res.ok) {
+    console.error("Failed to mark post as failed:", await res.text());
+  }
 }
 
 // --- Main Twitter Posting Logic ---
@@ -131,6 +157,8 @@ async function sendTweet(text: string) {
   const url = `${BASE_URL}/tweets`;
   const method = "POST";
   const oauthHeader = generateOAuthHeader(method, url);
+
+  console.log("Sending tweet:", text.substring(0, 50) + "...");
 
   const response = await fetch(url, {
     method,
@@ -142,6 +170,8 @@ async function sendTweet(text: string) {
   });
 
   const responseText = await response.text();
+  console.log("Twitter API response:", response.status, responseText);
+  
   if (!response.ok) {
     throw new Error(`HTTP error! status: ${response.status}, body: ${responseText}`);
   }
@@ -152,30 +182,45 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
+  
   try {
+    console.log("Scheduled Twitter poster starting...");
     validateEnvVars();
 
     const pendingPosts = await fetchPendingPosts();
     if (!Array.isArray(pendingPosts) || !pendingPosts.length) {
-      return new Response(JSON.stringify({ success: true, processed: 0 }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      console.log("No pending posts found");
+      return new Response(JSON.stringify({ success: true, processed: 0 }), { 
+        headers: { ...corsHeaders, "Content-Type": "application/json" } 
+      });
     }
 
     let processed = 0, sent = 0, failed = 0;
 
     for (const post of pendingPosts) {
       try {
+        console.log(`Processing post ${post.id}: ${post.content?.substring(0, 50)}...`);
         const result = await sendTweet(post.content);
         await markPostSent(post.id, result);
+        console.log(`Successfully sent post ${post.id}`);
         sent++;
       } catch (err: any) {
+        console.error(`Failed to send post ${post.id}:`, err.message);
         await markPostFailed(post.id, String(err.message || err));
         failed++;
       }
       processed++;
     }
 
-    return new Response(JSON.stringify({ success: true, processed, sent, failed }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    console.log(`Processed ${processed} posts: ${sent} sent, ${failed} failed`);
+    return new Response(JSON.stringify({ success: true, processed, sent, failed }), { 
+      headers: { ...corsHeaders, "Content-Type": "application/json" } 
+    });
   } catch (error: any) {
-    return new Response(JSON.stringify({ success: false, error: error.message }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    console.error("Edge function error:", error.message);
+    return new Response(JSON.stringify({ success: false, error: error.message }), { 
+      status: 500, 
+      headers: { ...corsHeaders, "Content-Type": "application/json" } 
+    });
   }
 });
