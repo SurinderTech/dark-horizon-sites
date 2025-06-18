@@ -47,12 +47,12 @@ export default function TimePickerInput({ control, name }: TimePickerInputProps)
                   value={hour}
                   onValueChange={(value) => updateTime(value, minute, period)}
                 >
-                  <SelectTrigger className="w-20">
+                  <SelectTrigger className="w-20 bg-background border-border text-foreground">
                     <SelectValue placeholder="Hour" />
                   </SelectTrigger>
-                  <SelectContent className="bg-white border border-gray-200 shadow-lg z-50 max-h-60 overflow-y-auto">
+                  <SelectContent className="bg-background border border-border shadow-lg z-50 max-h-60 overflow-y-auto">
                     {hours.map((h) => (
-                      <SelectItem key={h} value={h.toString()} className="hover:bg-gray-100">
+                      <SelectItem key={h} value={h.toString()} className="text-foreground hover:bg-accent hover:text-accent-foreground">
                         {h}
                       </SelectItem>
                     ))}
@@ -65,12 +65,12 @@ export default function TimePickerInput({ control, name }: TimePickerInputProps)
                   value={minute}
                   onValueChange={(value) => updateTime(hour, value, period)}
                 >
-                  <SelectTrigger className="w-20">
+                  <SelectTrigger className="w-20 bg-background border-border text-foreground">
                     <SelectValue placeholder="Min" />
                   </SelectTrigger>
-                  <SelectContent className="bg-white border border-gray-200 shadow-lg z-50 max-h-60 overflow-y-auto">
+                  <SelectContent className="bg-background border border-border shadow-lg z-50 max-h-60 overflow-y-auto">
                     {minutes.map((m) => (
-                      <SelectItem key={m} value={m.toString()} className="hover:bg-gray-100">
+                      <SelectItem key={m} value={m.toString()} className="text-foreground hover:bg-accent hover:text-accent-foreground">
                         {m.toString().padStart(2, '0')}
                       </SelectItem>
                     ))}
@@ -83,12 +83,12 @@ export default function TimePickerInput({ control, name }: TimePickerInputProps)
                   value={period}
                   onValueChange={(value) => updateTime(hour, minute, value)}
                 >
-                  <SelectTrigger className="w-20">
+                  <SelectTrigger className="w-20 bg-background border-border text-foreground">
                     <SelectValue placeholder="AM/PM" />
                   </SelectTrigger>
-                  <SelectContent className="bg-white border border-gray-200 shadow-lg z-50">
-                    <SelectItem value="AM" className="hover:bg-gray-100">AM</SelectItem>
-                    <SelectItem value="PM" className="hover:bg-gray-100">PM</SelectItem>
+                  <SelectContent className="bg-background border border-border shadow-lg z-50">
+                    <SelectItem value="AM" className="text-foreground hover:bg-accent hover:text-accent-foreground">AM</SelectItem>
+                    <SelectItem value="PM" className="text-foreground hover:bg-accent hover:text-accent-foreground">PM</SelectItem>
                   </SelectContent>
                 </Select>
               </FormControl>
