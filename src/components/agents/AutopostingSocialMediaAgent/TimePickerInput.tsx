@@ -22,7 +22,7 @@ export default function TimePickerInput({ control, name }: TimePickerInputProps)
           const [time, period] = timeStr.split(' ');
           if (!time || !period) return { hour: '', minute: '', period: '' };
           const [hour, minute] = time.split(':');
-          return { hour, minute, period };
+          return { hour: hour || '', minute: minute || '', period: period || '' };
         };
 
         const formatTime = (hour: string, minute: string, period: string) => {
@@ -33,9 +33,18 @@ export default function TimePickerInput({ control, name }: TimePickerInputProps)
 
         const { hour, minute, period } = parseTime(field.value || '');
 
-        const updateTime = (newHour: string, newMinute: string, newPeriod: string) => {
-          const formattedTime = formatTime(newHour || hour, newMinute || minute, newPeriod || period);
-          field.onChange(formattedTime);
+        const updateTime = (newHour?: string, newMinute?: string, newPeriod?: string) => {
+          const finalHour = newHour !== undefined ? newHour : hour;
+          const finalMinute = newMinute !== undefined ? newMinute : minute;
+          const finalPeriod = newPeriod !== undefined ? newPeriod : period;
+          
+          console.log('Updating time:', { finalHour, finalMinute, finalPeriod });
+          
+          if (finalHour && finalMinute && finalPeriod) {
+            const formattedTime = formatTime(finalHour, finalMinute, finalPeriod);
+            console.log('Formatted time:', formattedTime);
+            field.onChange(formattedTime);
+          }
         };
 
         return (
@@ -45,14 +54,17 @@ export default function TimePickerInput({ control, name }: TimePickerInputProps)
               <FormControl>
                 <Select
                   value={hour}
-                  onValueChange={(value) => updateTime(value, minute, period)}
+                  onValueChange={(value) => {
+                    console.log('Hour selected:', value);
+                    updateTime(value, minute, period);
+                  }}
                 >
                   <SelectTrigger className="w-20 bg-background border-border text-foreground">
                     <SelectValue placeholder="Hour" />
                   </SelectTrigger>
-                  <SelectContent className="bg-background border border-border shadow-lg z-50 max-h-60 overflow-y-auto">
+                  <SelectContent className="bg-popover border border-border shadow-lg z-[9999] max-h-60 overflow-y-auto">
                     {hours.map((h) => (
-                      <SelectItem key={h} value={h.toString()} className="text-foreground hover:bg-accent hover:text-accent-foreground">
+                      <SelectItem key={h} value={h.toString()} className="text-popover-foreground hover:bg-accent hover:text-accent-foreground cursor-pointer">
                         {h}
                       </SelectItem>
                     ))}
@@ -63,14 +75,17 @@ export default function TimePickerInput({ control, name }: TimePickerInputProps)
               <FormControl>
                 <Select
                   value={minute}
-                  onValueChange={(value) => updateTime(hour, value, period)}
+                  onValueChange={(value) => {
+                    console.log('Minute selected:', value);
+                    updateTime(hour, value, period);
+                  }}
                 >
                   <SelectTrigger className="w-20 bg-background border-border text-foreground">
                     <SelectValue placeholder="Min" />
                   </SelectTrigger>
-                  <SelectContent className="bg-background border border-border shadow-lg z-50 max-h-60 overflow-y-auto">
+                  <SelectContent className="bg-popover border border-border shadow-lg z-[9999] max-h-60 overflow-y-auto">
                     {minutes.map((m) => (
-                      <SelectItem key={m} value={m.toString()} className="text-foreground hover:bg-accent hover:text-accent-foreground">
+                      <SelectItem key={m} value={m.toString()} className="text-popover-foreground hover:bg-accent hover:text-accent-foreground cursor-pointer">
                         {m.toString().padStart(2, '0')}
                       </SelectItem>
                     ))}
@@ -81,14 +96,17 @@ export default function TimePickerInput({ control, name }: TimePickerInputProps)
               <FormControl>
                 <Select
                   value={period}
-                  onValueChange={(value) => updateTime(hour, minute, value)}
+                  onValueChange={(value) => {
+                    console.log('Period selected:', value);
+                    updateTime(hour, minute, value);
+                  }}
                 >
                   <SelectTrigger className="w-20 bg-background border-border text-foreground">
                     <SelectValue placeholder="AM/PM" />
                   </SelectTrigger>
-                  <SelectContent className="bg-background border border-border shadow-lg z-50">
-                    <SelectItem value="AM" className="text-foreground hover:bg-accent hover:text-accent-foreground">AM</SelectItem>
-                    <SelectItem value="PM" className="text-foreground hover:bg-accent hover:text-accent-foreground">PM</SelectItem>
+                  <SelectContent className="bg-popover border border-border shadow-lg z-[9999]">
+                    <SelectItem value="AM" className="text-popover-foreground hover:bg-accent hover:text-accent-foreground cursor-pointer">AM</SelectItem>
+                    <SelectItem value="PM" className="text-popover-foreground hover:bg-accent hover:text-accent-foreground cursor-pointer">PM</SelectItem>
                   </SelectContent>
                 </Select>
               </FormControl>
