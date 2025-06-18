@@ -78,6 +78,7 @@ function generateOAuthHeader(method: string, url: string) {
 }
 
 const BASE_URL = "https://api.x.com/2";
+const BASE_URL_MEDIA = "https://upload.twitter.com/1.1";
 
 // --- Function to fetch pending posts due for sending ---
 async function fetchPendingPosts() {
@@ -85,6 +86,7 @@ async function fetchPendingPosts() {
   const url = `${SUPABASE_URL}/rest/v1/scheduled_posts?platform=eq.twitter&status=eq.pending&scheduled_at=lte.${currentTime}&order=scheduled_at.asc`;
   
   console.log("Fetching pending posts from:", url);
+  console.log("Current time:", currentTime);
   
   const res = await fetch(url, {
     method: "GET",
@@ -103,12 +105,53 @@ async function fetchPendingPosts() {
   }
   
   const posts = await res.json();
-  console.log("Found pending posts:", posts.length);
+  console.log("Found pending posts:", posts.length, posts);
   return posts;
+}
+
+// Function to upload image to Twitter (media/upload)
+async function uploadImageToTwitterFromUrl(imageUrl: string): Promise<string> {
+  console.log("Uploading image to Twitter:", imageUrl);
+  
+  // Download the image data
+  const imgResp = await fetch(imageUrl);
+  if (!imgResp.ok) throw new Error(`Failed to fetch image: ${await imgResp.text()}`);
+  
+  const blob = await imgResp.blob();
+  const arrayBuffer = await blob.arrayBuffer();
+  const media_data = Buffer.from(arrayBuffer).toString("base64");
+
+  // Twitter media/upload endpoint
+  const url = `${BASE_URL_MEDIA}/media/upload.json`;
+  const method = "POST";
+  const oauthHeader = generateOAuthHeader(method, url);
+  const formBody = new URLSearchParams();
+  formBody.append("media_data", media_data);
+
+  const resp = await fetch(url, {
+    method,
+    headers: {
+      Authorization: oauthHeader,
+      "Content-Type": "application/x-www-form-urlencoded",
+    },
+    body: formBody.toString(),
+  });
+  
+  const respText = await resp.text();
+  console.log("Twitter media upload response:", resp.status, respText);
+  
+  if (!resp.ok) {
+    throw new Error(`Twitter media upload failed: ${resp.status} - ${respText}`);
+  }
+  
+  const body = JSON.parse(respText);
+  if (!body.media_id_string) throw new Error("Twitter upload did not return media_id_string");
+  return body.media_id_string;
 }
 
 // --- Function to update a post's status/response/error ---
 async function markPostSent(id: number, response: any) {
+  console.log(`Marking post ${id} as sent`);
   const url = `${SUPABASE_URL}/rest/v1/scheduled_posts?id=eq.${id}`;
   const res = await fetch(url, {
     method: "PATCH",
@@ -126,11 +169,15 @@ async function markPostSent(id: number, response: any) {
   });
   
   if (!res.ok) {
-    console.error("Failed to mark post as sent:", await res.text());
+    const errorText = await res.text();
+    console.error("Failed to mark post as sent:", errorText);
+  } else {
+    console.log(`Successfully marked post ${id} as sent`);
   }
 }
 
 async function markPostFailed(id: number, errorMsg: string) {
+  console.log(`Marking post ${id} as failed:`, errorMsg);
   const url = `${SUPABASE_URL}/rest/v1/scheduled_posts?id=eq.${id}`;
   const res = await fetch(url, {
     method: "PATCH",
@@ -148,17 +195,24 @@ async function markPostFailed(id: number, errorMsg: string) {
   });
   
   if (!res.ok) {
-    console.error("Failed to mark post as failed:", await res.text());
+    const errorText = await res.text();
+    console.error("Failed to mark post as failed:", errorText);
   }
 }
 
 // --- Main Twitter Posting Logic ---
-async function sendTweet(text: string) {
+async function sendTweet(text: string, media_ids?: string[]) {
   const url = `${BASE_URL}/tweets`;
   const method = "POST";
   const oauthHeader = generateOAuthHeader(method, url);
 
   console.log("Sending tweet:", text.substring(0, 50) + "...");
+
+  const body: Record<string, any> = { text };
+  if (media_ids && media_ids.length > 0) {
+    body.media = { media_ids };
+    console.log("Including media_ids:", media_ids);
+  }
 
   const response = await fetch(url, {
     method,
@@ -166,7 +220,7 @@ async function sendTweet(text: string) {
       Authorization: oauthHeader,
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ text }),
+    body: JSON.stringify(body),
   });
 
   const responseText = await response.text();
@@ -184,7 +238,7 @@ Deno.serve(async (req) => {
   }
   
   try {
-    console.log("Scheduled Twitter poster starting...");
+    console.log("=== Scheduled Twitter poster starting ===");
     validateEnvVars();
 
     const pendingPosts = await fetchPendingPosts();
@@ -200,7 +254,24 @@ Deno.serve(async (req) => {
     for (const post of pendingPosts) {
       try {
         console.log(`Processing post ${post.id}: ${post.content?.substring(0, 50)}...`);
-        const result = await sendTweet(post.content);
+        console.log(`Post scheduled_at: ${post.scheduled_at}`);
+        
+        let media_ids: string[] | undefined = undefined;
+        
+        // Handle image upload if present
+        if (post.image_url && typeof post.image_url === "string") {
+          try {
+            console.log("Post has image, uploading to Twitter:", post.image_url);
+            const media_id = await uploadImageToTwitterFromUrl(post.image_url);
+            media_ids = [media_id];
+            console.log("Image uploaded successfully, media_id:", media_id);
+          } catch (imgErr: any) {
+            console.error(`Failed to upload image for post ${post.id}:`, imgErr.message);
+            // Continue without image rather than failing the whole post
+          }
+        }
+        
+        const result = await sendTweet(post.content, media_ids);
         await markPostSent(post.id, result);
         console.log(`Successfully sent post ${post.id}`);
         sent++;
@@ -212,7 +283,7 @@ Deno.serve(async (req) => {
       processed++;
     }
 
-    console.log(`Processed ${processed} posts: ${sent} sent, ${failed} failed`);
+    console.log(`=== Processed ${processed} posts: ${sent} sent, ${failed} failed ===`);
     return new Response(JSON.stringify({ success: true, processed, sent, failed }), { 
       headers: { ...corsHeaders, "Content-Type": "application/json" } 
     });
