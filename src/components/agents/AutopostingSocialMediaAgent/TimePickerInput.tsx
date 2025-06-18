@@ -1,0 +1,101 @@
+
+import React from "react";
+import { FormField, FormItem, FormControl, FormLabel, FormMessage } from "@/components/ui/form";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
+interface TimePickerInputProps {
+  control: any;
+  name: string;
+}
+
+export default function TimePickerInput({ control, name }: TimePickerInputProps) {
+  const hours = Array.from({ length: 12 }, (_, i) => i + 1);
+  const minutes = ['00', '15', '30', '45'];
+
+  return (
+    <FormField
+      control={control}
+      name={name}
+      render={({ field }) => {
+        const parseTime = (timeStr: string) => {
+          if (!timeStr) return { hour: '', minute: '', period: '' };
+          const [time, period] = timeStr.split(' ');
+          if (!time || !period) return { hour: '', minute: '', period: '' };
+          const [hour, minute] = time.split(':');
+          return { hour, minute, period };
+        };
+
+        const formatTime = (hour: string, minute: string, period: string) => {
+          if (!hour || !minute || !period) return '';
+          return `${hour}:${minute} ${period}`;
+        };
+
+        const { hour, minute, period } = parseTime(field.value);
+
+        const updateTime = (newHour: string, newMinute: string, newPeriod: string) => {
+          const formattedTime = formatTime(newHour, newMinute, newPeriod);
+          field.onChange(formattedTime);
+        };
+
+        return (
+          <FormItem>
+            <FormLabel>Time</FormLabel>
+            <div className="flex gap-2">
+              <FormControl>
+                <Select
+                  value={hour}
+                  onValueChange={(value) => updateTime(value, minute, period)}
+                >
+                  <SelectTrigger className="w-20">
+                    <SelectValue placeholder="Hour" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-white border shadow-lg z-50">
+                    {hours.map((h) => (
+                      <SelectItem key={h} value={h.toString()}>
+                        {h}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </FormControl>
+              
+              <FormControl>
+                <Select
+                  value={minute}
+                  onValueChange={(value) => updateTime(hour, value, period)}
+                >
+                  <SelectTrigger className="w-20">
+                    <SelectValue placeholder="Min" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-white border shadow-lg z-50">
+                    {minutes.map((m) => (
+                      <SelectItem key={m} value={m}>
+                        {m}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </FormControl>
+              
+              <FormControl>
+                <Select
+                  value={period}
+                  onValueChange={(value) => updateTime(hour, minute, value)}
+                >
+                  <SelectTrigger className="w-20">
+                    <SelectValue placeholder="AM/PM" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-white border shadow-lg z-50">
+                    <SelectItem value="AM">AM</SelectItem>
+                    <SelectItem value="PM">PM</SelectItem>
+                  </SelectContent>
+                </Select>
+              </FormControl>
+            </div>
+            <FormMessage />
+          </FormItem>
+        );
+      }}
+    />
+  );
+}

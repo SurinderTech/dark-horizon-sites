@@ -9,6 +9,7 @@ import PlatformCheckboxes from "./PlatformCheckboxes";
 import ContentTypeTabs from "./ContentTypeTabs";
 import SchedulingTypeSelector from "./SchedulingTypeSelector";
 import DayOfWeekCheckboxes from "./DayOfWeekCheckboxes";
+import TimePickerInput from "./TimePickerInput";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { addDays, set } from "date-fns";
@@ -70,6 +71,22 @@ async function uploadPostImage(file: File): Promise<{ url: string, name: string 
   const url = publicData?.publicUrl;
   if (!url) throw new Error("Failed to get public image URL.");
   return { url, name: file.name };
+}
+
+// Helper function to convert 12-hour to 24-hour format
+function convertTo24Hour(timeStr: string): { hours: number; minutes: number } {
+  const [time, period] = timeStr.split(' ');
+  const [hourStr, minuteStr] = time.split(':');
+  let hours = parseInt(hourStr);
+  const minutes = parseInt(minuteStr);
+  
+  if (period === 'PM' && hours !== 12) {
+    hours += 12;
+  } else if (period === 'AM' && hours === 12) {
+    hours = 0;
+  }
+  
+  return { hours, minutes };
 }
 
 export default function SchedulePostForm({ onPostsScheduled }: any) {
@@ -148,10 +165,17 @@ export default function SchedulePostForm({ onPostsScheduled }: any) {
 
       setLoadingMessage('Scheduling...');
       const newPosts = [];
-      const [hours, minutes] = values.time.split(':').map(Number);
+      
+      // Convert AM/PM time to 24-hour format
+      const { hours, minutes } = convertTo24Hour(values.time);
 
       if (values.scheduleType === "specificDate" && values.specificDate) {
-        const scheduled_at = new Date(`${values.specificDate}T${values.time}`);
+        // Create the scheduled date with the converted time
+        const scheduledDate = new Date(`${values.specificDate}T00:00:00`);
+        const scheduled_at = set(scheduledDate, { hours, minutes, seconds: 0, milliseconds: 0 });
+        
+        console.log('Scheduling post for:', scheduled_at.toISOString());
+        
         for (const platform of values.platforms) {
           if (platform.toLowerCase() === "twitter") {
             try {
@@ -288,19 +312,7 @@ export default function SchedulePostForm({ onPostsScheduled }: any) {
                 <DayOfWeekCheckboxes control={form.control} name="recurringDays" />
               )}
 
-              <FormField
-                control={form.control}
-                name="time"
-                render={({ field }) => (
-                  <div>
-                    <FormLabel>Time</FormLabel>
-                    <FormControl>
-                      <Input type="time" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </div>
-                )}
-              />
+              <TimePickerInput control={form.control} name="time" />
             </div>
             <Button type="submit" disabled={loading} className="w-full">
               {loading ? loadingMessage : 'Schedule Post'}
