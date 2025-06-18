@@ -9,8 +9,8 @@ interface TimePickerInputProps {
 }
 
 export default function TimePickerInput({ control, name }: TimePickerInputProps) {
-  const hours = Array.from({ length: 12 }, (_, i) => i + 1);
-  const minutes = ['00', '15', '30', '45'];
+  const hours = Array.from({ length: 24 }, (_, i) => i + 1);
+  const minutes = Array.from({ length: 60 }, (_, i) => i + 1);
 
   return (
     <FormField
@@ -27,7 +27,8 @@ export default function TimePickerInput({ control, name }: TimePickerInputProps)
 
         const formatTime = (hour: string, minute: string, period: string) => {
           if (!hour || !minute || !period) return '';
-          return `${hour}:${minute} ${period}`;
+          const paddedMinute = minute.padStart(2, '0');
+          return `${hour}:${paddedMinute} ${period}`;
         };
 
         const { hour, minute, period } = parseTime(field.value);
@@ -49,7 +50,7 @@ export default function TimePickerInput({ control, name }: TimePickerInputProps)
                   <SelectTrigger className="w-20">
                     <SelectValue placeholder="Hour" />
                   </SelectTrigger>
-                  <SelectContent className="bg-white border shadow-lg z-50">
+                  <SelectContent className="bg-popover border shadow-lg z-50 max-h-60 overflow-y-auto">
                     {hours.map((h) => (
                       <SelectItem key={h} value={h.toString()}>
                         {h}
@@ -67,10 +68,10 @@ export default function TimePickerInput({ control, name }: TimePickerInputProps)
                   <SelectTrigger className="w-20">
                     <SelectValue placeholder="Min" />
                   </SelectTrigger>
-                  <SelectContent className="bg-white border shadow-lg z-50">
+                  <SelectContent className="bg-popover border shadow-lg z-50 max-h-60 overflow-y-auto">
                     {minutes.map((m) => (
-                      <SelectItem key={m} value={m}>
-                        {m}
+                      <SelectItem key={m} value={m.toString()}>
+                        {m.toString().padStart(2, '0')}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -85,7 +86,7 @@ export default function TimePickerInput({ control, name }: TimePickerInputProps)
                   <SelectTrigger className="w-20">
                     <SelectValue placeholder="AM/PM" />
                   </SelectTrigger>
-                  <SelectContent className="bg-white border shadow-lg z-50">
+                  <SelectContent className="bg-popover border shadow-lg z-50">
                     <SelectItem value="AM">AM</SelectItem>
                     <SelectItem value="PM">PM</SelectItem>
                   </SelectContent>
