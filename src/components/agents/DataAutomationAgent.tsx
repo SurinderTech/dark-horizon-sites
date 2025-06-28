@@ -8,27 +8,13 @@ import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Database, Play, Settings, BarChart3, Mail, Users, FileText } from 'lucide-react';
 import { toast } from 'sonner';
+import CampaignManager from './DataAutomationAgent/CampaignManager';
 
 const DataAutomationAgent = ({ agent }) => {
   const [workflowName, setWorkflowName] = useState('');
   const [workflowSteps, setWorkflowSteps] = useState('');
   const [workflows, setWorkflows] = useState([]);
   const [loading, setLoading] = useState(false);
-
-  // Email Campaign State
-  const [emailCampaign, setEmailCampaign] = useState({
-    leadsSheetUrl: '',
-    templatesSheetUrl: '',
-    senderName: 'Surinder kumar',
-    campaignName: '',
-    isRunning: false
-  });
-  const [campaignHistory, setCampaignHistory] = useState([]);
-  const [campaignStats, setCampaignStats] = useState({
-    totalSent: 0,
-    successRate: 0,
-    lastRun: 'Never'
-  });
 
   const handleCreateWorkflow = async () => {
     if (!workflowName || !workflowSteps) {
@@ -84,81 +70,19 @@ const DataAutomationAgent = ({ agent }) => {
     }
   };
 
-  const handleRunEmailCampaign = async () => {
-    if (!emailCampaign.leadsSheetUrl || !emailCampaign.templatesSheetUrl || !emailCampaign.campaignName) {
-      toast.error('Please fill in all required fields');
-      return;
-    }
-
-    setEmailCampaign(prev => ({ ...prev, isRunning: true }));
-    setLoading(true);
-
-    try {
-      // Simulate the n8n workflow execution
-      toast.info('Starting email campaign...');
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      toast.info('Reading leads from Google Sheets...');
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      toast.info('Filtering leads (excluding already sent)...');
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      toast.info('Loading email templates...');
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      toast.info('Sending emails...');
-      await new Promise(resolve => setTimeout(resolve, 3000));
-      
-      toast.info('Updating Google Sheets with send status...');
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      // Simulate campaign results
-      const emailsSent = Math.floor(Math.random() * 50) + 10;
-      const successRate = Math.floor(Math.random() * 20) + 80;
-
-      const newCampaign = {
-        id: Date.now(),
-        name: emailCampaign.campaignName,
-        emailsSent,
-        successRate,
-        timestamp: new Date().toLocaleString(),
-        status: 'Completed'
-      };
-
-      setCampaignHistory(prev => [newCampaign, ...prev]);
-      setCampaignStats(prev => ({
-        totalSent: prev.totalSent + emailsSent,
-        successRate: Math.floor((prev.successRate + successRate) / 2),
-        lastRun: new Date().toLocaleString()
-      }));
-
-      toast.success(`Email campaign completed! Sent ${emailsSent} emails with ${successRate}% success rate.`);
-      
-      // Reset form
-      setEmailCampaign(prev => ({
-        ...prev,
-        campaignName: '',
-        isRunning: false
-      }));
-
-    } catch (error) {
-      toast.error('Failed to run email campaign');
-    } finally {
-      setLoading(false);
-      setEmailCampaign(prev => ({ ...prev, isRunning: false }));
-    }
-  };
-
   return (
     <div className="space-y-6">
-      <Tabs defaultValue="create" className="w-full">
+      <Tabs defaultValue="email-campaigns" className="w-full">
         <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="email-campaigns">Email Campaigns</TabsTrigger>
           <TabsTrigger value="create">Create Workflow</TabsTrigger>
-          <TabsTrigger value="email-campaign">Email Campaign</TabsTrigger>
           <TabsTrigger value="manage">Manage</TabsTrigger>
           <TabsTrigger value="analytics">Analytics</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="email-campaigns" className="space-y-4">
+          <CampaignManager />
+        </TabsContent>
 
         <TabsContent value="create" className="space-y-4">
           <Card>
@@ -197,117 +121,6 @@ const DataAutomationAgent = ({ agent }) => {
               </Button>
             </CardContent>
           </Card>
-        </TabsContent>
-
-        <TabsContent value="email-campaign" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <Mail className="mr-2 h-5 w-5" />
-                Email Campaign Automation
-              </CardTitle>
-              <p className="text-sm text-muted-foreground">
-                Automated email campaigns using Google Sheets for leads and templates
-              </p>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <Label htmlFor="campaign-name">Campaign Name</Label>
-                <Input
-                  id="campaign-name"
-                  placeholder="e.g., Q1 Marketing Campaign"
-                  value={emailCampaign.campaignName}
-                  onChange={(e) => setEmailCampaign(prev => ({ ...prev, campaignName: e.target.value }))}
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="leads-sheet">Leads Google Sheet URL</Label>
-                <Input
-                  id="leads-sheet"
-                  placeholder="https://docs.google.com/spreadsheets/d/..."
-                  value={emailCampaign.leadsSheetUrl}
-                  onChange={(e) => setEmailCampaign(prev => ({ ...prev, leadsSheetUrl: e.target.value }))}
-                />
-                <p className="text-xs text-muted-foreground mt-1">
-                  Sheet should contain Email, Name, and send status columns
-                </p>
-              </div>
-
-              <div>
-                <Label htmlFor="templates-sheet">Email Templates Google Sheet URL</Label>
-                <Input
-                  id="templates-sheet"
-                  placeholder="https://docs.google.com/spreadsheets/d/..."
-                  value={emailCampaign.templatesSheetUrl}
-                  onChange={(e) => setEmailCampaign(prev => ({ ...prev, templatesSheetUrl: e.target.value }))}
-                />
-                <p className="text-xs text-muted-foreground mt-1">
-                  Sheet should contain subject and body columns for email templates
-                </p>
-              </div>
-
-              <div>
-                <Label htmlFor="sender-name">Sender Name</Label>
-                <Input
-                  id="sender-name"
-                  value={emailCampaign.senderName}
-                  onChange={(e) => setEmailCampaign(prev => ({ ...prev, senderName: e.target.value }))}
-                />
-              </div>
-
-              <Button 
-                onClick={handleRunEmailCampaign} 
-                disabled={loading || emailCampaign.isRunning}
-                className="w-full"
-              >
-                {emailCampaign.isRunning ? 'Running Campaign...' : 'Start Email Campaign'}
-              </Button>
-
-              <div className="mt-6 p-4 bg-muted rounded-lg">
-                <h4 className="font-medium mb-2 flex items-center">
-                  <FileText className="mr-2 h-4 w-4" />
-                  Workflow Process
-                </h4>
-                <ol className="text-sm text-muted-foreground space-y-1 list-decimal list-inside">
-                  <li>Read leads from Google Sheets (Sheet1)</li>
-                  <li>Filter leads that haven't been contacted (send status ≠ 'sent')</li>
-                  <li>Load email templates from Google Sheets (Sheet2)</li>
-                  <li>For each lead, select random template and personalize</li>
-                  <li>Send email via Gmail with random template</li>
-                  <li>Update lead status and timestamp in Google Sheets</li>
-                  <li>Wait between sends to avoid rate limits</li>
-                </ol>
-              </div>
-            </CardContent>
-          </Card>
-
-          {campaignHistory.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Users className="mr-2 h-5 w-5" />
-                  Campaign History
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {campaignHistory.map((campaign) => (
-                    <div key={campaign.id} className="flex justify-between items-center p-3 bg-muted rounded-lg">
-                      <div>
-                        <h4 className="font-medium">{campaign.name}</h4>
-                        <p className="text-sm text-muted-foreground">{campaign.timestamp}</p>
-                      </div>
-                      <div className="text-right">
-                        <p className="font-medium">{campaign.emailsSent} emails sent</p>
-                        <p className="text-sm text-green-600">{campaign.successRate}% success rate</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          )}
         </TabsContent>
 
         <TabsContent value="manage" className="space-y-4">
@@ -403,43 +216,6 @@ const DataAutomationAgent = ({ agent }) => {
                     <p className="text-2xl font-bold">
                       {workflows.filter(w => w.status === 'Active').length}
                     </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Email Campaign Analytics */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center">
-                  <Mail className="h-8 w-8 text-blue-500" />
-                  <div className="ml-4">
-                    <p className="text-sm text-muted-foreground">Total Emails Sent</p>
-                    <p className="text-2xl font-bold">{campaignStats.totalSent}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center">
-                  <BarChart3 className="h-8 w-8 text-green-500" />
-                  <div className="ml-4">
-                    <p className="text-sm text-muted-foreground">Success Rate</p>
-                    <p className="text-2xl font-bold">{campaignStats.successRate}%</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center">
-                  <Users className="h-8 w-8 text-purple-500" />
-                  <div className="ml-4">
-                    <p className="text-sm text-muted-foreground">Campaigns Run</p>
-                    <p className="text-2xl font-bold">{campaignHistory.length}</p>
                   </div>
                 </div>
               </CardContent>
