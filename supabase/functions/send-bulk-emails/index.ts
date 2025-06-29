@@ -15,31 +15,57 @@ interface BulkEmailRequest {
 }
 
 const handler = async (req: Request): Promise<Response> => {
+  console.log("Bulk email function called with method:", req.method);
+  
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const supabaseClient = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_ANON_KEY") ?? "",
-      {
-        global: {
-          headers: { Authorization: req.headers.get("Authorization")! },
-        },
-      }
-    );
+    // Check if required environment variables exist
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY");
+    const resendApiKey = Deno.env.get("RESEND_API_KEY");
+
+    console.log("Environment check:", {
+      supabaseUrl: !!supabaseUrl,
+      supabaseAnonKey: !!supabaseAnonKey,
+      resendApiKey: !!resendApiKey
+    });
+
+    if (!supabaseUrl || !supabaseAnonKey) {
+      throw new Error("Missing Supabase configuration");
+    }
+
+    if (!resendApiKey) {
+      throw new Error("Missing Resend API key");
+    }
+
+    const supabaseClient = createClient(supabaseUrl, supabaseAnonKey, {
+      global: {
+        headers: { Authorization: req.headers.get("Authorization")! },
+      },
+    });
 
     // Get user from JWT token
     const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
+    console.log("User authentication:", { userId: user?.id, error: userError });
+    
     if (userError || !user) {
-      throw new Error("Unauthorized");
+      throw new Error("Unauthorized: " + (userError?.message || "No user found"));
     }
 
-    const { campaignId, templateId, leadIds }: BulkEmailRequest = await req.json();
+    const requestBody = await req.json();
+    console.log("Request body:", requestBody);
     
+    const { campaignId, templateId, leadIds }: BulkEmailRequest = requestBody;
+    
+    if (!campaignId || !templateId || !leadIds || leadIds.length === 0) {
+      throw new Error("Missing required parameters: campaignId, templateId, or leadIds");
+    }
+
     // Initialize Resend
-    const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
+    const resend = new Resend(resendApiKey);
 
     // Get campaign details
     const { data: campaign, error: campaignError } = await supabaseClient
@@ -49,8 +75,10 @@ const handler = async (req: Request): Promise<Response> => {
       .eq('user_id', user.id)
       .single();
 
+    console.log("Campaign fetch:", { campaign, error: campaignError });
+
     if (campaignError || !campaign) {
-      throw new Error("Campaign not found");
+      throw new Error("Campaign not found: " + (campaignError?.message || "Invalid campaign ID"));
     }
 
     // Get email template
@@ -61,8 +89,10 @@ const handler = async (req: Request): Promise<Response> => {
       .eq('user_id', user.id)
       .single();
 
+    console.log("Template fetch:", { template, error: templateError });
+
     if (templateError || !template) {
-      throw new Error("Template not found");
+      throw new Error("Template not found: " + (templateError?.message || "Invalid template ID"));
     }
 
     // Get leads to send emails to
@@ -73,8 +103,10 @@ const handler = async (req: Request): Promise<Response> => {
       .eq('user_id', user.id)
       .eq('send_status', 'pending');
 
-    if (leadsError || !leads) {
-      throw new Error("No leads found");
+    console.log("Leads fetch:", { leadsCount: leads?.length, error: leadsError });
+
+    if (leadsError || !leads || leads.length === 0) {
+      throw new Error("No leads found: " + (leadsError?.message || "No pending leads available"));
     }
 
     console.log(`Starting bulk email campaign for ${leads.length} leads`);
@@ -99,9 +131,11 @@ const handler = async (req: Request): Promise<Response> => {
       console.error("Error creating history record:", historyError);
     }
 
-    // Send emails in batches (similar to your n8n workflow)
+    // Send emails one by one
     for (const lead of leads) {
       try {
+        console.log(`Sending email to ${lead.email}`);
+        
         // Personalize email content
         const personalizedSubject = template.subject.replace(/{{name}}/g, lead.name || lead.email);
         const personalizedBody = template.body
@@ -118,8 +152,8 @@ const handler = async (req: Request): Promise<Response> => {
 
         console.log(`Email sent to ${lead.email}:`, emailResponse);
 
-        // Update lead status
-        await supabaseClient
+        // Update lead status to sent
+        const { error: updateError } = await supabaseClient
           .from('email_leads')
           .update({
             send_status: 'sent',
@@ -127,9 +161,13 @@ const handler = async (req: Request): Promise<Response> => {
           })
           .eq('id', lead.id);
 
+        if (updateError) {
+          console.error(`Error updating lead ${lead.id}:`, updateError);
+        }
+
         emailsSent++;
 
-        // Add delay between emails (similar to n8n workflow)
+        // Add delay between emails to avoid rate limiting
         await new Promise(resolve => setTimeout(resolve, 1000));
 
       } catch (emailError) {
@@ -178,7 +216,8 @@ const handler = async (req: Request): Promise<Response> => {
         success: true,
         emailsSent,
         emailsFailed,
-        successRate: Math.round(successRate)
+        successRate: Math.round(successRate),
+        message: `Campaign completed successfully! ${emailsSent} emails sent with ${Math.round(successRate)}% success rate`
       }),
       {
         status: 200,
@@ -192,7 +231,11 @@ const handler = async (req: Request): Promise<Response> => {
   } catch (error: any) {
     console.error("Error in bulk email function:", error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ 
+        success: false,
+        error: error.message,
+        details: "Check the function logs for more information"
+      }),
       {
         status: 500,
         headers: { "Content-Type": "application/json", ...corsHeaders },

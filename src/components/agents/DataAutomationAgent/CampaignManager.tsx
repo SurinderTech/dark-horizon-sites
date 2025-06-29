@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -6,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Mail, Plus, Send } from 'lucide-react';
+import { Mail, Plus, Send, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -70,33 +69,107 @@ const CampaignManager = () => {
 
   const fetchData = async () => {
     try {
+      console.log('Fetching campaign data...');
+      
       // Fetch campaigns
-      const { data: campaignsData } = await supabase
+      const { data: campaignsData, error: campaignsError } = await supabase
         .from('email_campaigns')
         .select('*')
         .eq('user_id', user?.id)
         .order('created_at', { ascending: false });
 
+      if (campaignsError) {
+        console.error('Campaigns error:', campaignsError);
+        throw campaignsError;
+      }
+
       // Fetch templates
-      const { data: templatesData } = await supabase
+      const { data: templatesData, error: templatesError } = await supabase
         .from('email_templates')
         .select('*')
         .eq('user_id', user?.id)
         .order('created_at', { ascending: false });
 
+      if (templatesError) {
+        console.error('Templates error:', templatesError);
+        throw templatesError;
+      }
+
       // Fetch leads
-      const { data: leadsData } = await supabase
+      const { data: leadsData, error: leadsError } = await supabase
         .from('email_leads')
         .select('*')
         .eq('user_id', user?.id)
         .order('created_at', { ascending: false });
 
+      if (leadsError) {
+        console.error('Leads error:', leadsError);
+        throw leadsError;
+      }
+
       setCampaigns(campaignsData || []);
       setTemplates(templatesData || []);
       setLeads(leadsData || []);
+      
+      console.log('Data fetched successfully:', {
+        campaigns: campaignsData?.length,
+        templates: templatesData?.length,
+        leads: leadsData?.length
+      });
     } catch (error) {
       console.error('Error fetching data:', error);
-      toast.error('Failed to fetch data');
+      toast.error('Failed to fetch data: ' + error.message);
+    }
+  };
+
+  const sendBulkEmails = async () => {
+    if (!selectedCampaign || !selectedTemplate) {
+      toast.error('Please select both campaign and template');
+      return;
+    }
+
+    const pendingLeads = leads.filter(lead => lead.send_status === 'pending');
+    if (pendingLeads.length === 0) {
+      toast.error('No pending leads to send emails to');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      console.log('Starting bulk email send...', {
+        campaignId: selectedCampaign,
+        templateId: selectedTemplate,
+        leadCount: pendingLeads.length
+      });
+      
+      toast.info(`Starting to send emails to ${pendingLeads.length} leads...`);
+
+      const { data, error } = await supabase.functions.invoke('send-bulk-emails', {
+        body: {
+          campaignId: selectedCampaign,
+          templateId: selectedTemplate,
+          leadIds: pendingLeads.map(lead => lead.id)
+        }
+      });
+
+      console.log('Bulk email response:', { data, error });
+
+      if (error) {
+        console.error('Supabase function error:', error);
+        throw new Error(`Function error: ${error.message}`);
+      }
+
+      if (data?.success) {
+        toast.success(data.message || `Campaign completed! Sent ${data.emailsSent} emails with ${data.successRate}% success rate`);
+        fetchData(); // Refresh data
+      } else {
+        throw new Error(data?.error || 'Unknown error occurred');
+      }
+    } catch (error) {
+      console.error('Error sending bulk emails:', error);
+      toast.error('Failed to send bulk emails: ' + error.message);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -126,7 +199,7 @@ const CampaignManager = () => {
       toast.success('Campaign created successfully!');
     } catch (error) {
       console.error('Error creating campaign:', error);
-      toast.error('Failed to create campaign');
+      toast.error('Failed to create campaign: ' + error.message);
     } finally {
       setLoading(false);
     }
@@ -158,7 +231,7 @@ const CampaignManager = () => {
       toast.success('Template created successfully!');
     } catch (error) {
       console.error('Error creating template:', error);
-      toast.error('Failed to create template');
+      toast.error('Failed to create template: ' + error.message);
     } finally {
       setLoading(false);
     }
@@ -189,50 +262,55 @@ const CampaignManager = () => {
       toast.success('Lead added successfully!');
     } catch (error) {
       console.error('Error adding lead:', error);
-      toast.error('Failed to add lead');
+      toast.error('Failed to add lead: ' + error.message);
     } finally {
       setLoading(false);
     }
   };
 
-  const sendBulkEmails = async () => {
-    if (!selectedCampaign || !selectedTemplate) {
-      toast.error('Please select both campaign and template');
-      return;
-    }
-
-    const pendingLeads = leads.filter(lead => lead.send_status === 'pending');
-    if (pendingLeads.length === 0) {
-      toast.error('No pending leads to send emails to');
-      return;
-    }
-
-    try {
-      setLoading(true);
-      toast.info(`Starting to send emails to ${pendingLeads.length} leads...`);
-
-      const { data, error } = await supabase.functions.invoke('send-bulk-emails', {
-        body: {
-          campaignId: selectedCampaign,
-          templateId: selectedTemplate,
-          leadIds: pendingLeads.map(lead => lead.id)
-        }
-      });
-
-      if (error) throw error;
-
-      toast.success(`Campaign completed! Sent ${data.emailsSent} emails with ${data.successRate}% success rate`);
-      fetchData(); // Refresh data
-    } catch (error) {
-      console.error('Error sending bulk emails:', error);
-      toast.error('Failed to send bulk emails');
-    } finally {
-      setLoading(false);
-    }
-  };
+  if (!user) {
+    return (
+      <Card>
+        <CardContent className="p-8 text-center">
+          <AlertCircle className="h-12 w-12 text-yellow-500 mx-auto mb-4" />
+          <p className="text-lg font-semibold mb-2">Authentication Required</p>
+          <p className="text-muted-foreground">Please log in to access the email campaign manager.</p>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <div className="space-y-6">
+      {/* Status Overview */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Campaign Overview</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-center">
+            <div className="p-4 bg-blue-50 rounded-lg">
+              <p className="text-2xl font-bold text-blue-600">{campaigns.length}</p>
+              <p className="text-sm text-muted-foreground">Campaigns</p>
+            </div>
+            <div className="p-4 bg-green-50 rounded-lg">
+              <p className="text-2xl font-bold text-green-600">{templates.length}</p>
+              <p className="text-sm text-muted-foreground">Templates</p>
+            </div>
+            <div className="p-4 bg-purple-50 rounded-lg">
+              <p className="text-2xl font-bold text-purple-600">{leads.length}</p>
+              <p className="text-sm text-muted-foreground">Total Leads</p>
+            </div>
+            <div className="p-4 bg-orange-50 rounded-lg">
+              <p className="text-2xl font-bold text-orange-600">
+                {leads.filter(lead => lead.send_status === 'pending').length}
+              </p>
+              <p className="text-sm text-muted-foreground">Pending</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Campaign Creation */}
       <Card>
         <CardHeader>
