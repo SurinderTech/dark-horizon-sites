@@ -5,10 +5,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Mail, Plus, Send, AlertCircle } from 'lucide-react';
+import { Mail, Plus, Send, AlertCircle, Users } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import BulkLeadImport from './BulkLeadImport';
 
 interface Campaign {
   id: string;
@@ -397,10 +398,16 @@ const CampaignManager = () => {
         </CardContent>
       </Card>
 
-      {/* Lead Management */}
+      {/* Bulk Lead Import */}
+      <BulkLeadImport onImportComplete={fetchData} />
+
+      {/* Individual Lead Management */}
       <Card>
         <CardHeader>
-          <CardTitle>Add Email Lead</CardTitle>
+          <CardTitle className="flex items-center">
+            <Users className="mr-2 h-5 w-5" />
+            Add Single Lead
+          </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
