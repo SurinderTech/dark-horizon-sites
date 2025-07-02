@@ -24,15 +24,79 @@ const handler = async (req: Request): Promise<Response> => {
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
     const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY");
-    const googleApiKey = Deno.env.get("GOOGLE_SHEETS_API_KEY");
+    const googleServiceAccountKey = Deno.env.get("GOOGLE_SERVICE_ACCOUNT_KEY");
 
     if (!supabaseUrl || !supabaseAnonKey) {
       throw new Error("Missing Supabase configuration");
     }
 
-    if (!googleApiKey) {
-      throw new Error("Missing Google Sheets API key");
+    if (!googleServiceAccountKey) {
+      throw new Error("Missing Google Service Account key");
     }
+
+    // Parse the service account key
+    const serviceAccount = JSON.parse(googleServiceAccountKey);
+    
+    // Get OAuth2 access token
+    const getAccessToken = async () => {
+      const jwtHeader = {
+        alg: "RS256",
+        typ: "JWT"
+      };
+
+      const now = Math.floor(Date.now() / 1000);
+      const jwtPayload = {
+        iss: serviceAccount.client_email,
+        scope: "https://www.googleapis.com/auth/spreadsheets",
+        aud: "https://oauth2.googleapis.com/token",
+        iat: now,
+        exp: now + 3600
+      };
+
+      // Create JWT manually (simplified for edge function)
+      const encoder = new TextEncoder();
+      const importedKey = await crypto.subtle.importKey(
+        "pkcs8",
+        encoder.encode(serviceAccount.private_key.replace(/\\n/g, '\n')),
+        {
+          name: "RSASSA-PKCS1-v1_5",
+          hash: "SHA-256",
+        },
+        false,
+        ["sign"]
+      );
+
+      const jwtHeaderEncoded = btoa(JSON.stringify(jwtHeader)).replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
+      const jwtPayloadEncoded = btoa(JSON.stringify(jwtPayload)).replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
+      const jwtData = `${jwtHeaderEncoded}.${jwtPayloadEncoded}`;
+      
+      const signature = await crypto.subtle.sign(
+        "RSASSA-PKCS1-v1_5",
+        importedKey,
+        encoder.encode(jwtData)
+      );
+      
+      const jwtSignatureEncoded = btoa(String.fromCharCode(...new Uint8Array(signature)))
+        .replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
+      
+      const jwt = `${jwtData}.${jwtSignatureEncoded}`;
+
+      // Exchange JWT for access token
+      const tokenResponse = await fetch("https://oauth2.googleapis.com/token", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: `grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer&assertion=${jwt}`
+      });
+
+      if (!tokenResponse.ok) {
+        throw new Error(`Failed to get access token: ${await tokenResponse.text()}`);
+      }
+
+      const tokenData = await tokenResponse.json();
+      return tokenData.access_token;
+    };
+
+    const accessToken = await getAccessToken();
 
     const supabaseClient = createClient(supabaseUrl, supabaseAnonKey, {
       global: {
@@ -56,11 +120,12 @@ const handler = async (req: Request): Promise<Response> => {
     if (action === 'create') {
       // Create a new Google Sheet with lead data
       const createSheetResponse = await fetch(
-        `https://sheets.googleapis.com/v4/spreadsheets?key=${googleApiKey}`,
+        `https://sheets.googleapis.com/v4/spreadsheets`,
         {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
+            'Authorization': `Bearer ${accessToken}`,
           },
           body: JSON.stringify({
             properties: {
@@ -89,11 +154,12 @@ const handler = async (req: Request): Promise<Response> => {
       const allData = [...headers, ...sheetData];
 
       const updateResponse = await fetch(
-        `https://sheets.googleapis.com/v4/spreadsheets/${newSheet.spreadsheetId}/values/Leads!A1:append?valueInputOption=RAW&key=${googleApiKey}`,
+        `https://sheets.googleapis.com/v4/spreadsheets/${newSheet.spreadsheetId}/values/Leads!A1:append?valueInputOption=RAW`,
         {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
+            'Authorization': `Bearer ${accessToken}`,
           },
           body: JSON.stringify({
             values: allData,
@@ -129,11 +195,12 @@ const handler = async (req: Request): Promise<Response> => {
       }
 
       const readResponse = await fetch(
-        `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/A:Z?key=${googleApiKey}`,
+        `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/A:Z`,
         {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
+            'Authorization': `Bearer ${accessToken}`,
           },
         }
       );
