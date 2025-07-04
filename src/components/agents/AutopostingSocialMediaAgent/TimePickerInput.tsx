@@ -9,17 +9,19 @@ interface TimePickerInputProps {
 }
 
 export default function TimePickerInput({ control, name }: TimePickerInputProps) {
-  // Generate time options in 30-minute intervals
+  // Generate time options with every minute for precise testing
   const timeOptions = [];
+  
+  // Generate all possible times with minute precision
   for (let hour = 1; hour <= 12; hour++) {
-    for (let minute of [0, 30]) {
+    for (let minute = 0; minute < 60; minute++) {
       const period = 'AM';
       const timeStr = `${hour}:${minute.toString().padStart(2, '0')} ${period}`;
       timeOptions.push({ value: timeStr, label: timeStr });
     }
   }
   for (let hour = 1; hour <= 12; hour++) {
-    for (let minute of [0, 30]) {
+    for (let minute = 0; minute < 60; minute++) {
       const period = 'PM';
       const timeStr = `${hour}:${minute.toString().padStart(2, '0')} ${period}`;
       timeOptions.push({ value: timeStr, label: timeStr });
