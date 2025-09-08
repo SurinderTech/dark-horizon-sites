@@ -66,7 +66,7 @@ const AIAgents = () => {
   return (
     <Layout>
       {/* Hero Section */}
-      <section className="py-20 md:py-28 bg-gradient-to-b from-tech-blue to-background">
+      <section className="py-20 md:py-28 bg-gradient-to-b from-primary/20 to-background">
         <div className="container mx-auto px-4 md:px-6">
           <div className="max-w-3xl mx-auto text-center">
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6">
@@ -106,21 +106,21 @@ const AIAgents = () => {
               const canUseAgent = isPurchased || role === 'admin';
               
               return (
-                <Card key={agent.id} className={`overflow-hidden ${agent.is_popular ? 'border-tech-cyan' : 'border-border'} ${canUseAgent ? 'bg-green-50 border-green-500' : ''}`}>
+                <Card key={agent.id} className={`overflow-hidden ${agent.is_popular ? 'border-accent' : 'border-border'} ${canUseAgent ? 'bg-accent/5 border-accent' : ''}`}>
                   {agent.is_popular && !canUseAgent && (
-                    <div className="absolute top-0 right-0 bg-tech-cyan text-white px-4 py-1 text-sm font-medium z-10">
+                    <div className="absolute top-0 right-0 bg-accent text-accent-foreground px-4 py-1 text-sm font-medium z-10">
                       Popular
                     </div>
                   )}
                   {canUseAgent && (
-                    <div className="absolute top-0 right-0 bg-green-500 text-white px-4 py-1 text-sm font-medium z-10">
+                    <div className="absolute top-0 right-0 bg-accent text-accent-foreground px-4 py-1 text-sm font-medium z-10">
                       Owned
                     </div>
                   )}
                   <CardHeader className="p-0">
                     <div className="relative pb-[56.25%] bg-muted">
-                      <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-tech-blue to-tech-purple">
-                        <Play className="h-12 w-12 text-white" />
+                      <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-primary to-accent">
+                        <Play className="h-12 w-12 text-primary-foreground" />
                       </div>
                     </div>
                   </CardHeader>
@@ -131,7 +131,7 @@ const AIAgents = () => {
                       {agent.features.slice(0, 3).map((feature, index) => (
                         <div key={index} className="flex items-start">
                           <div className="mr-3 mt-1">
-                            <Check className="h-4 w-4 text-tech-cyan" />
+                            <Check className="h-4 w-4 text-accent" />
                           </div>
                           <span className="text-sm">{feature}</span>
                         </div>
@@ -159,12 +159,12 @@ const AIAgents = () => {
                       </div>
                     </div>
                     {canUseAgent ? (
-                      <Button asChild className="w-full bg-green-500 hover:bg-green-600">
+                      <Button asChild className="w-full">
                         <Link to={`/agent/${agent.id}/workspace`}>Use Agent</Link>
                       </Button>
                     ) : (
                       <Button 
-                        className="w-full bg-blue-purple hover:brightness-110 transition-all"
+                        className="w-full"
                         onClick={() => handlePurchase(agent.id)}
                       >
                         Purchase Now
@@ -197,14 +197,14 @@ const AIAgents = () => {
       {/* CTA Section */}
       <section className="py-16">
         <div className="container mx-auto px-4 md:px-6">
-          <div className="bg-gradient-to-br from-tech-blue via-tech-electric/20 to-tech-purple/20 rounded-2xl p-8 md:p-12">
+          <div className="bg-gradient-to-br from-primary/20 via-accent/10 to-secondary rounded-2xl p-8 md:p-12">
             <div className="max-w-3xl mx-auto text-center">
               <h2 className="text-3xl md:text-4xl font-bold mb-4">Need a Custom AI Agent?</h2>
               <p className="text-lg text-muted-foreground mb-8">
                 We can build a specialized AI agent tailored to your unique business requirements.
               </p>
               <div className="flex flex-wrap justify-center gap-4">
-                <Button asChild size="lg" className="bg-blue-purple hover:brightness-110 transition-all">
+                <Button asChild size="lg">
                   <Link to="/contact">Contact Us</Link>
                 </Button>
               </div>
