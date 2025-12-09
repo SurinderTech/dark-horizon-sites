@@ -42,7 +42,7 @@ B.Tech CSE | SaaS • AI • Product Builder
 
 | Landing Page | Dashboard |
 |-------------|-----------|
-| <img src="" width="400"> | <img src="" width="400"> |
+| <img src="Screenshot (716).png" width="400"> | <img src="" width="400"> |
 
 </div>
 
