@@ -1,61 +1,141 @@
-# Welcome 
 
-## Project info
-## How can I edit this code?
+<p><small>Best Viewed in <a href="https://github.com/settings/appearance">Dark Mode</a> 🌙 (Recommended)</small></p><br/>
 
-There are several ways of editing your application.
+<div align="center">
 
-**Use your preferred IDE**
+# 🤖 **Dark Horizon AI**  
+### *Custom AI Agents & High-Impact CGI Ads — One SaaS Platform*
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+<img src="https://img.shields.io/badge/SaaS-Platform-blueviolet?style=for-the-badge"/>
+<img src="https://img.shields.io/badge/AI-Agents-00C853?style=for-the-badge"/>
+<img src="https://img.shields.io/badge/CGI-Ads-FF6F00?style=for-the-badge"/>
 
+<br/>
 
-Follow these steps:
+🚀 **Dark Horizon AI** is a next-generation SaaS platform where users can  
+**build customizable AI agents** and **create cinematic CGI ads** — without complexity.
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+Designed for creators, startups, founders, and businesses who want **automation + visual impact** in one place.
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+</div>
 
-# Step 3: Install the necessary dependencies.
-npm i
+---
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
-```
+### 🧑‍💻 Built By  
+<small>
+Built with ❤️ by <a href="https://github.com/SurinderTech">Surinder</a><br/>
+B.Tech CSE | SaaS • AI • Product Builder
+</small>
 
-**Edit a file directly in GitHub**
+---
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+## 🔗 **Live Platform**
+👉 **Preview / Demo:**  
+🌐 https://preview--dark-horizon-sites.lovable.app
 
-**Use GitHub Codespaces**
+---
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+## 📸 **Screenshots & UI Preview**
+<!-- ADD YOUR SCREENSHOTS BELOW -->
 
-## What technologies are used for this project?
+<div align="center">
 
-This project is built with:
+| Landing Page | Dashboard |
+|-------------|-----------|
+| <img src="" width="400"> | <img src="" width="400"> |
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+</div>
 
 
+---
 
-## Can I connect a custom domain to my Lovable project?
+## ✨ **What Makes Dark Horizon Different?**
 
-Yes, you can!
+### 🤖 Custom AI Agents
+- Personalized AI agents per user  
+- Task-focused & instruction-based behavior  
+- Scalable for business workflows  
+- Reusable & configurable logic  
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+### 🎬 CGI Advertisement Studio
+- High-quality CGI-style ad generation  
+- Product-focused visual storytelling  
+- Brand-ready marketing output  
+- Built for modern digital campaigns  
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+### 🧠 SaaS-First Design
+- Multi-user platform  
+- Clean UI / Dashboard experience  
+- Built for scale & future integrations  
+
+---
+
+## 🚀 **Core Features**
+
+| Feature | Description |
+|-------|-------------|
+| 🧩 AI Agent Builder | Create, configure & manage custom AI agents |
+| 🎨 CGI Ads Generator | Produce visually rich CGI-based advertisements |
+| 📊 User Dashboard | Centralized control for agents & ads |
+| ⚡ Fast UI | Smooth, modern React interface |
+| 🛡️ Secure Ready | SaaS-friendly architecture |
+
+---
+
+## 🧪 **How It Works**
+
+1️⃣ **Sign Up / Login**  
+Create a user account on the platform
+
+2️⃣ **Build Your AI Agent**  
+Define instructions, role & behavior
+
+3️⃣ **Generate CGI Ads**  
+Create high-impact visual ads for products or brands
+
+4️⃣ **Manage from Dashboard**  
+Control everything from one clean interface
+
+---
+
+## 🧰 **Tech Stack**
+
+<details>
+<summary>🌐 Frontend</summary>
+
+| Technology | Usage |
+|----------|------|
+| ⚛️ React | UI & Component Logic |
+| 🟦 TypeScript | Type safety & scalability |
+| 🟨 JavaScript | Core logic |
+| 🎨 CSS / Tailwind | Styling & layouts |
+
+</details>
+
+<details>
+<summary>⚙️ Architecture</summary>
+
+| Layer | Details |
+|-----|--------|
+| SaaS | Multi-user design |
+| Modular | Extendable features |
+| API-Ready | AI & media integrations |
+
+</details>
+
+---
+
+## 🏗️ **Project Structure**
+
+```txt
+dark-horizon/
+├── src/
+│   ├── components/        # Reusable UI components
+│   ├── pages/             # Routes & views
+│   ├── services/          # API & logic handlers
+│   ├── hooks/             # Custom React hooks
+│   └── styles/            # Global styles
+├── public/                # Static assets
+├── package.json
+├── tsconfig.json
+└── README.md
