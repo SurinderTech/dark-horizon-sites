@@ -43,7 +43,7 @@ B.Tech CSE | SaaS • AI • Product Builder
 
 |  Dashboard|Premium feature  |
 |-------------|-----------|
-| <img src="Screenshot (711).png" width="400"> | <img src="Screenshot (716).png" width="400"> |
+| <img src="Screenshot (711).png" width="400"> <img src="" width="400"> | <img src="Screenshot (716).png" width="400"> |
 
 |  CGI ADS TEMPLATES |  |
 |-------------|-----------|
