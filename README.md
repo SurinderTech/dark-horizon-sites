@@ -41,9 +41,14 @@ B.Tech CSE | SaaS • AI • Product Builder
 
 <div align="center">
 
-|  Premium feature| Dashboard |
+|  Dashboard|Premium feature  |
 |-------------|-----------|
-| <img src="Screenshot (716).png" width="400"> | <img src="Screenshot (711).png" width="400"> |
+| <img src="Screenshot (711).png" width="400"> | <img src="Screenshot (716).png" width="400"> |
+
+|  Dashboard|Premium feature  |
+|-------------|-----------|
+| <img src="Screenshot (711).png" width="400"> | <img src="Screenshot (716).png" width="400"> |
+
 
 </div>
 
