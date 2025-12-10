@@ -47,7 +47,7 @@ B.Tech CSE | SaaS • AI • Product Builder
 
 |  CGI ADS TEMPLATES |  |
 |-------------|-----------|
-| <img src="Screenshot (714).png" width="400"> | <img src="Screenshot (716).png" width="400"> |
+| <img src="Screenshot (714).png" width="400"> | <img src="Screenshot (715).png" width="400"> |
 
 
 </div>
