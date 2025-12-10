@@ -44,9 +44,8 @@ B.Tech CSE | SaaS • AI • Product Builder
 |  Premium feature| Dashboard |
 |-------------|-----------|
 | <img src="Screenshot (716).png" width="400"> | <img src="Screenshot (711).png" width="400"> |
-<br>
 | AI Agent section |
-| <img src="Screenshot (711).png" width="400"> |
+| <img src="Screenshot (712).png" width="400"> |
 
 </div>
 
