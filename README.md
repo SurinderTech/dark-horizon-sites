@@ -131,7 +131,7 @@ Control everything from one clean interface
 
 ---
 
-## 🏗️ **Project Structure**
+## 🏗️ Project Structure
 
 ```txt
 dark-horizon/
@@ -145,3 +145,71 @@ dark-horizon/
 ├── package.json
 ├── tsconfig.json
 └── README.md
+```
+---
+<h1>🛠️ Installation Steps</h1>
+1️⃣ Clone the Repository
+
+
+bash
+Copy code
+
+
+git clone https://github.com/SurinderTech/dark-horizon-sites.git
+
+
+2️⃣ Navigate to Project Directory
+
+
+bash
+Copy code
+
+cd dark-horizon-sites
+
+
+3️⃣ Install Dependencies
+bash
+Copy code
+
+
+npm install
+
+
+4️⃣ Start Development Server
+bash
+Copy code
+
+
+npm run dev
+
+
+5️⃣ Open in Browser
+Copy code
+http://localhost:5173
+
+
+⚙️ Tech Stack
+
+
+Technology	Purpose
+
+
+React.js	UI development
+
+
+JavaScript	Core logic
+
+
+Vite	Fast build tool & dev server
+
+
+HTML5	Page structure
+
+
+CSS3	Styling & layouts
+
+
+npm	Dependency management
+
+
+Git & GitHub	Version control
