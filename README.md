@@ -154,34 +154,36 @@ dark-horizon/
 bash
 Copy code
 
-
+```
 git clone https://github.com/SurinderTech/dark-horizon-sites.git
-
+```
 
 2️⃣ Navigate to Project Directory
 
 
 bash
 Copy code
-
+```
 cd dark-horizon-sites
+```
 
-
+```
 3️⃣ Install Dependencies
+```
 bash
 Copy code
 
-
+```
 npm install
-
+```
 
 4️⃣ Start Development Server
 bash
 Copy code
 
-
+```
 npm run dev
-
+```
 
 5️⃣ Open in Browser
 Copy code
