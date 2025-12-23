@@ -190,28 +190,14 @@ Copy code
 http://localhost:5173
 
 
-⚙️ Tech Stack
+## 🧰 Technology Stack
 
-
-Technology	Purpose
-
-
-React.js	UI development
-
-
-JavaScript	Core logic
-
-
-Vite	Fast build tool & dev server
-
-
-HTML5	Page structure
-
-
-CSS3	Styling & layouts
-
-
-npm	Dependency management
-
-
-Git & GitHub	Version control
+| Technology | Purpose |
+|-----------|---------|
+| **React.js** | UI development |
+| **JavaScript** | Core application logic |
+| **Vite** | Fast build tool & development server |
+| **HTML5** | Page structure |
+| **CSS3** | Styling & responsive layouts |
+| **npm** | Dependency management |
+| **Git & GitHub** | Version control & collaboration |
