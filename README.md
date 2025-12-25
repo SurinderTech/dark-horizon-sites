@@ -114,7 +114,7 @@ Control everything from one clean interface
 | ⚛️ React | UI & Component Logic |
 | 🟦 TypeScript | Type safety & scalability |
 | 🟨 JavaScript | Core logic |
-| 🎨 CSS / Tailwind | Styling & layouts |
+| ✨ CSS / Tailwind | Styling & layouts |
 
 </details>
 
