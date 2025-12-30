@@ -21,7 +21,6 @@ Designed for creators, startups, founders, and businesses who want **automation 
 
 ---
 
-
 ## 🧑‍💻 Built By 
 <small>
 Built with ❤️ by <a href="https://github.com/SurinderTech">Surinder</a><br/>
