@@ -187,6 +187,17 @@ If you like this project:
  Fork it  
  Share feedback  
  Contribute ideas & improvements
+ ---
+
+
+# 📬 Connect With Me
+
+👨‍💻 GitHub: https://github.com/SurinderTech
+Ph. 9797486509
+Email: surinderkumar3182@gmail.com
+
+💼 Building futuristic SaaS, AI tools & digital products.
+ ---
 <h1>🛠️ Installation Steps</h1>
 1️⃣ Clone the Repository
 
