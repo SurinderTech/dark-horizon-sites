@@ -162,6 +162,20 @@ into one powerful ecosystem.
 
 Our mission is to help startups, creators, and businesses build faster, market smarter, and automate creatively.
 ---
+
+---
+
+# 🎯 Who Is This For?
+
+✅ Startups  
+✅ Content Creators  
+✅ Agencies  
+✅ E-commerce Brands  
+✅ Freelancers  
+✅ SaaS Founders  
+✅ AI Enthusiasts  
+
+Dark Horizon AI is designed for anyone who wants automation + high-converting visual content.
 <h1>🛠️ Installation Steps</h1>
 1️⃣ Clone the Repository
 
