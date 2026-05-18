@@ -187,14 +187,14 @@ If you like this project:
  Fork it  
  Share feedback  
  Contribute ideas & improvements
- ---
+
 
 
 # 📬 Connect With Me
 
-👨‍💻 GitHub: https://github.com/SurinderTech
-Ph. 9797486509
-Email: surinderkumar3182@gmail.com
+👨‍💻 GitHub: https://github.com/SurinderTech<br>
+Ph. 9797486509<br>
+Email: surinderkumar3182@gmail.com<br>
 
 💼 Building futuristic SaaS, AI tools & digital products.
  ---
