@@ -89,7 +89,7 @@ B.Tech CSE | SaaS • AI • Product Builder
 
 ---
 
-## 🧪 **How It Works**
+##  **How It Works**
 
 1️⃣ **Sign Up / Login**  
 Create a user account on the platform
