@@ -6,7 +6,7 @@
 <div align="center">
 
 # 🤖 **Dark Horizon AI**  
-### *Custom AI Agents & High-Impact CGI Ads — One SaaS Platform*
+### *> ⚡ Building the future of AI-powered automation & cinematic advertising.*
 
 <img src="https://img.shields.io/badge/SaaS-Platform-blueviolet?style=for-the-badge"/>
 <img src="https://img.shields.io/badge/AI-Agents-00C853?style=for-the-badge"/>
