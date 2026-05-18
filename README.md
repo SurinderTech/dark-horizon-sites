@@ -184,9 +184,9 @@ Dark Horizon AI is designed for anyone who wants automation + high-converting vi
 If you like this project:
 
 ⭐ Star the repository  
-🍴 Fork it  
-🧠 Share feedback  
-🚀 Contribute ideas & improvements
+ Fork it  
+ Share feedback  
+ Contribute ideas & improvements
 <h1>🛠️ Installation Steps</h1>
 1️⃣ Clone the Repository
 
