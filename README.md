@@ -147,6 +147,20 @@ dark-horizon/
 ├── tsconfig.json
 └── README.md
 ```
+
+---
+
+# 🌌 Vision
+
+Dark Horizon AI aims to simplify the future of digital creation by combining:
+
+- AI automation
+- Cinematic CGI marketing
+- Creator-focused SaaS tools
+
+into one powerful ecosystem.
+
+Our mission is to help startups, creators, and businesses build faster, market smarter, and automate creatively.
 ---
 <h1>🛠️ Installation Steps</h1>
 1️⃣ Clone the Repository
